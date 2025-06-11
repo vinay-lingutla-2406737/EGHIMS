@@ -1,0 +1,49 @@
+﻿@model Health_Insurance.Models.Policy
+
+@{
+    ViewData["Title"] = "Edit";
+}
+
+<h1>Edit</h1>
+
+<h4>Policy</h4>
+<hr />
+<div class="row">
+    <div class="col-md-4">
+        <form asp-action="Edit">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <input type="hidden" asp-for="PolicyId" />
+            <div class="form-group">
+                <label asp-for="PolicyName" class="control-label"></label>
+                <input asp-for="PolicyName" class="form-control" />
+                <span asp-validation-for="PolicyName" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="CoverageAmount" class="control-label"></label>
+                <input asp-for="CoverageAmount" class="form-control" />
+                <span asp-validation-for="CoverageAmount" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="PremiumAmount" class="control-label"></label>
+                <input asp-for="PremiumAmount" class="form-control" />
+                <span asp-validation-for="PremiumAmount" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <label asp-for="PolicyType" class="control-label"></label>
+                <input asp-for="PolicyType" class="form-control" />
+                <span asp-validation-for="PolicyType" class="text-danger"></span>
+            </div>
+            <div class="form-group">
+                <input type="submit" value="Save" class="btn btn-primary" />
+            </div>
+        </form>
+    </div>
+</div>
+
+<div>
+    <a asp-action="Index">Back to List</a>
+</div>
+
+@section Scripts {
+    @{await Html.RenderPartialAsync("_ValidationScriptsPartial");}
+}

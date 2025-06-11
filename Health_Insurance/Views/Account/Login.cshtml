@@ -1,0 +1,305 @@
+﻿@model Health_Insurance.Models.LoginViewModel
+
+@{
+    ViewData["Title"] = "Login";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<head>
+    <style>
+        /* --- LOGIN PAGE STYLES --- */
+        /* This replaces your .login-wrapper styles for centering and overall background */
+        .container-fluid.min-vh-100 {
+            background-color: #f8f8fc; /* Overall subtle page background */
+            /* Ensure no conflicting margin on body or html for full-height effect */
+        }
+
+        /* Outer Card for the entire login layout (encompassing both halves) */
+        .login-page-card {
+            max-width: 1200px; /* Max width for the entire card */
+            width: 100%; /* Responsive width */
+            border: none;
+            overflow: hidden; /* Crucial for rounded corners when using background images */
+            border-radius: 15px; /* Consistent rounded corners */
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.5); /* General shadow for the whole card */
+        }
+
+        /* Left Half: Welcome Section with Background Image and Overlay */
+        .login-welcome-section {
+            /* The cityscape background image (ensure you have city-background.jpg in wwwroot/images/) */
+            background-image: url('/images/city-background.jpg');
+            background-size: cover; /* Cover the entire area */
+            background-position: center; /* Center the image */
+            background-repeat: no-repeat;
+            /* Your purple overlay color */
+            background-color: rgba(118, 0, 188, 0.50); /* Purple overlay with higher opacity for welcome section */
+            /* Blend mode to combine the background color and image */
+            background-blend-mode: multiply;
+            color: #fff; /* White text on dark background */
+            padding: 3rem !important; /* Ample padding for content */
+            border-radius: 15px 0 0 15px; /* Rounded corners only on the left side */
+        }
+
+            .login-welcome-section .welcome-image {
+                max-height: 150px; /* Control image height */
+                width: auto;
+                object-fit: contain; /* Ensure image fits */
+            }
+
+            .login-welcome-section .welcome-heading {
+                font-family: 'Montserrat', sans-serif;
+                font-size: 2.5em;
+                font-weight: 700;
+                margin-bottom: 10px;
+                line-height: 1.2;
+            }
+
+            .login-welcome-section .welcome-message {
+                font-family: 'Montserrat', sans-serif;
+                font-size: 1.1em;
+                font-weight: 400;
+                line-height: 1.5;
+            }
+
+            .login-welcome-section .welcome-message-sub {
+                font-family: 'Montserrat', sans-serif;
+                font-size: 0.95em;
+                opacity: 0.9;
+            }
+
+            .login-welcome-section .welcome-icons i {
+                font-size: 2.5em;
+                margin: 0 10px;
+                color: #ffc107; /* Gold color for stars, re-used here for icons */
+                transition: transform 0.2s ease-in-out;
+                /* Add border-radius to curve the icons by making them circular */
+                border-radius: 50%; /* Makes the background of the icon circular */
+                padding: 10px; /* Add some padding around the icon */
+                background-color: rgba(255, 255, 255, 0.2); /* Subtle background for visibility */
+            }
+
+                .login-welcome-section .welcome-icons i:hover {
+                    transform: scale(1.1);
+                }
+
+        /* Right Half: Contains the Login Form Card */
+        /* This div simply acts as a container for your existing login-container */
+        .login-form-right-half {
+            background-color: #ffffff; /* Explicitly white background for this half */
+            border-radius: 0 15px 15px 0; /* Rounded corners on the right side */
+        }
+
+        /* --- Existing Login Container Styles (Moved and adapted) --- */
+        .login-container {
+            background-color: #ffffff; /* This ensures your login form content is on a white background */
+            padding: 40px;
+            border-radius: 15px;
+            box-shadow: none; /* Remove its own shadow, as the parent .login-page-card has one */
+            width: 100%; /* Important: will now take 100% of its parent column */
+            max-width: none; /* Remove max-width, parent column manages this */
+        }
+
+            .login-container h2 {
+                margin-bottom: 30px;
+                text-align: center;
+                color: #333;
+                font-family: 'Montserrat', sans-serif; /* Apply stylish font here too */
+                font-weight: 600;
+            }
+
+        .form-control {
+            border-radius: 12px; /* Increased border-radius for more curve on inputs */
+            padding: 12px 15px; /* Add more padding to inputs */
+        }
+
+        /* Add more space between input groups */
+        .mb-3 {
+            margin-bottom: 1.5rem !important; /* Increased margin-bottom for more space */
+        }
+
+
+        .btn-login {
+            border-radius: 50px; /* Very high border-radius for pill-shaped buttons */
+            padding: 12px 25px; /* Slightly more padding for a better look */
+            font-size: 1.1rem;
+            width: 100%;
+            font-family: 'Montserrat', sans-serif; /* Apply stylish font */
+            font-weight: 600;
+            margin-top: 15px; /* Add a bit of space above the buttons */
+            transition: all 0.3s ease; /* Smooth transition for hover effects */
+        }
+
+        /* Colors for login buttons - customize as needed */
+        .btn-primary.btn-login {
+            background-color: rgba(118, 0, 188, 0.70); /* Primary blue for Admin, slightly brighter */
+            border-color: rgba(20,20,20);
+        }
+
+            .btn-primary.btn-login:hover {
+                background-color: rgba(118, 0, 188, 0.50);
+                border-color:rgba(20,20,20);
+                transform: translateY(-2px); /* Slight lift on hover */
+            }
+
+        .btn-success.btn-login {
+            background-color: #28a745; /* Green for Employee */
+            border-color: #28a745;
+        }
+
+            .btn-success.btn-login:hover {
+                background-color: #218838;
+                border-color: #218838;
+                transform: translateY(-2px);
+            }
+
+        .btn-info.btn-login {
+            background-color: #17a2b8; /* Cyan for HR */
+            border-color: #17a2b8;
+        }
+
+            .btn-info.btn-login:hover {
+                background-color: #138496;
+                border-color: #138496;
+                transform: translateY(-2px);
+            }
+
+        /* Adjust tab button styles for consistency */
+        .nav-tabs .nav-link {
+            border-radius: 10px 10px 0 0; /* Slightly curved top corners for tabs */
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 500;
+            color: #495057;
+            margin-right: 5px;
+            border: 1px solid transparent;
+            border-bottom-color: #dee2e6;
+            padding: 10px 20px;
+        }
+
+            .nav-tabs .nav-link.active {
+                background-color: #ffffff;
+                border-color: #dee2e6 #dee2e6 #fff;
+                color: #007bff; /* Active tab color */
+            }
+
+        .nav-tabs {
+            border-bottom: 1px solid #dee2e6;
+            margin-bottom: 20px; /* Space below the tabs */
+        }
+
+        .tab-content {
+            padding-top: 20px; /* Space above the tab content */
+        }
+    </style>
+</head>
+
+<div class="container-fluid min-vh-100 d-flex align-items-center justify-content-center py-5 mt-0">
+    <div class="login-page-card card shadow-lg rounded-3">
+        <div class="row g-0">
+            <div class="col-md-6 login-welcome-section d-flex flex-column justify-content-center align-items-center p-5 text-center">
+                @* You can add a small logo or icon here if desired, ensure it contrasts with the background *@
+                <img src="~/images/logo_primeProtect.png" alt="Welcome" class="img-fluid mb-4 welcome-image">
+
+                <h2 class="welcome-heading">Welcome to PrimeProtect!</h2>
+                <p class="welcome-message mb-3">Your trusted partner in health insurance management.</p>
+                <p class="welcome-message-sub">Manage your policies, claims, and benefits with ease and confidence.</p>
+
+                <div class="welcome-icons mt-4">
+                    <i class="fas fa-user-shield"></i>
+                    <i class="fas fa-file-invoice-dollar"></i>
+                    <i class="fas fa-hands-helping"></i>
+                </div>
+            </div>
+
+            <div class="col-md-6 p-5 d-flex align-items-center justify-content-center login-form-right-half">
+                <div class="login-container w-100">
+                    <h2>Health Insurance System Login</h2>
+
+                    <div asp-validation-summary="ModelOnly" class="text-danger mb-3"></div>
+
+                    <ul class="nav nav-tabs" id="loginTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="admin-tab" data-bs-toggle="tab" data-bs-target="#adminLogin" type="button" role="tab" aria-controls="adminLogin" aria-selected="true">Admin Login</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="employee-tab" data-bs-toggle="tab" data-bs-target="#employeeLogin" type="button" role="tab" aria-controls="employeeLogin" aria-selected="false">Employee Login</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="hr-tab" data-bs-toggle="tab" data-bs-target="#hrLogin" type="button" role="tab" aria-controls="hrLogin" aria-selected="false">HR Login</button>
+                        </li>
+                    </ul>
+
+                    <div class="tab-content" id="loginTabsContent">
+                        <div class="tab-pane fade show active" id="adminLogin" role="tabpanel" aria-labelledby="admin-tab">
+                            <form asp-action="Login" asp-controller="Account" method="post">
+                                @Html.AntiForgeryToken()
+                                <div class="mb-3">
+                                    <label asp-for="Username" class="form-label"></label>
+                                    <input asp-for="Username" class="form-control" placeholder="Enter Admin Username">
+                                    <span asp-validation-for="Username" class="text-danger"></span>
+                                </div>
+                                <div class="mb-3">
+                                    <label asp-for="Password" class="form-label"></label>
+                                    <input asp-for="Password" type="password" class="form-control" placeholder="Enter Admin Password">
+                                    <span asp-validation-for="Password" class="text-danger"></span>
+                                </div>
+                                <input type="hidden" asp-for="LoginType" value="Admin" />
+                                <button type="submit" class="btn btn-primary btn-login">Login as Admin</button>
+                            </form>
+                        </div>
+
+                        <div class="tab-pane fade" id="employeeLogin" role="tabpanel" aria-labelledby="employee-tab">
+                            <form asp-action="Login" asp-controller="Account" method="post">
+                                @Html.AntiForgeryToken()
+                                <div class="mb-3">
+                                    <label asp-for="Username" class="form-label"></label>
+                                    <input asp-for="Username" class="form-control" placeholder="Enter Employee Username">
+                                    <span asp-validation-for="Username" class="text-danger"></span>
+                                </div>
+                                <div class="mb-3">
+                                    <label asp-for="Password" class="form-label"></label>
+                                    <input asp-for="Password" type="password" class="form-control" placeholder="Enter Employee Password">
+                                    <span asp-validation-for="Password" class="text-danger"></span>
+                                </div>
+                                <input type="hidden" asp-for="LoginType" value="Employee" />
+                                <button type="submit" class="btn btn-success btn-login">Login as Employee</button>
+                            </form>
+                        </div>
+
+                        <div class="tab-pane fade" id="hrLogin" role="tabpanel" aria-labelledby="hr-tab">
+                            <form asp-action="Login" asp-controller="Account" method="post">
+                                @Html.AntiForgeryToken()
+                                <div class="mb-3">
+                                    <label asp-for="Username" class="form-label"></label>
+                                    <input asp-for="Username" class="form-control" placeholder="Enter HR Username">
+                                    <span asp-validation-for="Username" class="text-danger"></span>
+                                </div>
+                                <div class="mb-3">
+                                    <label asp-for="Password" class="form-label"></label>
+                                    <input asp-for="Password" type="password" class="form-control" placeholder="Enter HR Password">
+                                    <span asp-validation-for="Password" class="text-danger"></span>
+                                </div>
+                                <input type="hidden" asp-for="LoginType" value="HR" />
+                                <button type="submit" class="btn btn-info btn-login">Login as HR</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+
+    <script>
+        $(document).ready(function() {
+            // No additional JS needed for tabs, Bootstrap handles it.
+        });
+    </script>
+}

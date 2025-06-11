@@ -1,0 +1,195 @@
+﻿
+@{
+    ViewData["Title"] = "Home Page";
+}
+
+@if (!User.Identity.IsAuthenticated)
+{
+
+    <div class="top-header-section">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-lg-4 col-md-6 text-md-start text-center mb-3 mb-md-0">
+                    <p class="slogan-text">
+                        <strong>PrimeProtect</strong> is one of India's leading <br> digital insurance platform
+                    </p>
+                    <div class="star-rating text-center text-md-start mt-2">
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star"></i>
+                        <i class="fas fa-star-half-alt"></i>
+                        <small class="ms-2 text-muted"><sup>*</sup>Source - Google Review Rating</small>
+                    </div>
+                </div>
+                <div class="col-lg-8 col-md-6">
+                    <div class="row text-center">
+                        <div class="col-4 stat-item">
+                            <div class="stat-number">9.7 crore</div>
+                            <div class="stat-label">Registered Consumers</div>
+                        </div>
+                        <div class="col-4 stat-item">
+                            <div class="stat-number">51</div>
+                            <div class="stat-label">Insurance Partners</div>
+                        </div>
+                        <div class="col-4 stat-item">
+                            <div class="stat-number">4.9 crore</div>
+                            <div class="stat-label">Policies Sold</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="main-content-section">
+        <div class="container">
+            <div class="text-center mb-5">
+                <h2 class="main-heading">
+                    Why PrimeProtect is the preferred choice for <br> <span>55 Lakh+ people like you</span>
+                </h2>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-5 col-md-6 mb-4">
+                    <div class="feature-card">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="card-icon-wrapper me-3">
+                                <i class="fas fa-indian-rupee-sign"></i>
+                            </div>
+                            <h4>Affordable options</h4>
+                        </div>
+                        <p>We help you find health insurance plans with affordable premiums, uncover discounts and monthly payment options provided by our insurance partners.</p>
+                    </div>
+                </div>
+
+                <div class="col-lg-1 d-none d-lg-block"></div>
+
+                <div class="col-lg-5 col-md-6 mb-4">
+                    <div class="feature-card">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="card-icon-wrapper me-3">
+                                <i class="fas fa-award"></i>
+                            </div>
+                            <h4>Platinum insurance partner</h4>
+                        </div>
+                        <p>PrimeProtect is one of the largest partners for most health insurance companies. Our dedicated claims team works with the insurance companies to help you answer insurer queries and track your claim settlement.</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row justify-content-center">
+                <div class="col-lg-5 col-md-6 mb-4">
+                    <div class="feature-card">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="card-icon-wrapper me-3">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <h4>30 minute claim support<sup>*</sup></h4>
+                        </div>
+                        <p>Our claim specialists will reach your hospital or home in 30 minutes to support your health insurance claim.</p>
+                    </div>
+                </div>
+
+                <div class="col-lg-1 d-none d-lg-block"></div>
+
+                <div class="col-lg-5 col-md-6 mb-4">
+                    <div class="feature-card">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="card-icon-wrapper me-3">
+                                <i class="fas fa-headset"></i>
+                            </div>
+                            <h4>Dedicated Customer Support</h4>
+                        </div>
+                        <p>Our expert team is available 24/7 to assist you with any queries or issues regarding your health insurance plan.</p>
+                    </div>
+                </div>
+
+                <div class="col-lg-5 d-none d-lg-block"></div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container my-5">
+        <div class="card shadow-sm">
+            <div class="table-responsive">
+                <table class="table table-bordered table-striped custom-features-table">
+                    <thead>
+                        <tr>
+                            <th>Key Features</th>
+                            <th>Benefits</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Cashless Hospital Network</td>
+                            <td>16000+ across India</td>
+                        </tr>
+                        <tr>
+                            <td>Tax Savings</td>
+                            <td>Upto ₹ 1 lac*****</td>
+                        </tr>
+                        <tr>
+                            <td>Renewal Benefit</td>
+                            <td>Free Health Check-up within 60 Days of Renewal</td>
+                        </tr>
+                        <tr>
+                            <td>Claim Settlement Rate</td>
+                            <td>2 Claims/Minute*</td>
+                        </tr>
+                        <tr>
+                            <td>Claim Approval</td>
+                            <td>Within 30* ~ Minutes</td>
+                        </tr>
+                        <tr>
+                            <td>Coverage</td>
+                            <td>Hospitalization Expenses, Day Care Treatments, Home Treatments, AYUSH Treatment, Organ Donor Expenses</td>
+                        </tr>
+                        <tr>
+                            <td>Pre & Post Hospitalization</td>
+                            <td>Covers Expenses upto 60 days of admission & 180 days post discharge</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    @if (!User.Identity.IsAuthenticated)
+    {
+        // ... (Your existing top-header-section, main-content-section, and table HTML here) ...
+
+        <div class="know-more-section py-5">
+            <div class="container">
+                <h2 class="section-title text-center mb-4">Know More about Health Insurance</h2>
+
+                <div class="info-block">
+                    <h3 class="info-block-title">Health Insurance</h3>
+                    <p>Health insurance takes care of your medical expenses and ensures that out-of-pocket expenses are curtailed up to the Sum insured.</p>
+                </div>
+
+                <div class="info-block">
+                    <p>A health insurance policy ensures that you can avail cashless treatment at a network hospital, typically covering 30 days and 60 days pre and post hospitalization, respectively, in most of the Health Insurance plans.</p>
+                </div>
+
+                <div class="info-block">
+                    <p>One can add value to the Base Health Insurance Plan by complementing them with additional benefits such as Personal Accident (PA) Cover, Critical Illness (CI) Cover, etc. These products are available at a very nominal cost adding benefits, which are not a part of the Base Health Insurance plan. For Example, A PA plan helps by providing coverage for disability, which is typically not covered under the basic health insurance plan. An individual needs not go through any waiting period and medical checkups for a PA cover.</p>
+                </div>
+
+                <div class="info-block">
+                    <p>One can also invest on one of the popular senior citizen health insurance policies and ensure comprehensive security for their elderly parents or secure their old age that often brings along several ailments that require expensive medical treatment.</p>
+                </div>
+
+                <div class="info-block">
+                    <p>Almost all the health insurance plans include Coronavirus treatment cover. As per the IRDAI guidelines, insurers have also launched COVID-19 specific best health insurance.</p>
+                </div>
+
+                <div class="info-block">
+                    <p>Two special COVID health insurance policies namely, Corona Rakshak policy and Corona Kavach policy also introduced that provide lump sum payment upon diagnosis and also pay for the cost of consumable items like PPE Kits, Masks, Gloves, etc.</p>
+                </div>
+
+            </div>
+        </div>
+
+    }
+}

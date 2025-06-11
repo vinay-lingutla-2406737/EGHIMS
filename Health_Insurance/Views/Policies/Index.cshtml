@@ -1,0 +1,53 @@
+﻿@model IEnumerable<Health_Insurance.Models.Policy>
+
+@{
+    ViewData["Title"] = "Index";
+}
+
+<h1>Index</h1>
+
+<p>
+    <a asp-action="Create">Create New</a>
+</p>
+<table class="table">
+    <thead>
+        <tr>
+            <th>
+                @Html.DisplayNameFor(model => model.PolicyName)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.CoverageAmount)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.PremiumAmount)
+            </th>
+            <th>
+                @Html.DisplayNameFor(model => model.PolicyType)
+            </th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+@foreach (var item in Model) {
+        <tr>
+            <td>
+                @Html.DisplayFor(modelItem => item.PolicyName)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.CoverageAmount)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.PremiumAmount)
+            </td>
+            <td>
+                @Html.DisplayFor(modelItem => item.PolicyType)
+            </td>
+            <td>
+                <a asp-action="Edit" asp-route-id="@item.PolicyId">Edit</a> |
+                <a asp-action="Details" asp-route-id="@item.PolicyId">Details</a> |
+                <a asp-action="Delete" asp-route-id="@item.PolicyId">Delete</a>
+            </td>
+        </tr>
+}
+    </tbody>
+</table>

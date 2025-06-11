@@ -1,0 +1,102 @@
+﻿@{
+    ViewData["Title"] = "Calculate Premium";
+}
+
+<h1 class="mb-4">Calculate Premium</h1>
+
+<p>Enter Employee and Policy details to calculate the premium.</p>
+
+@* Form for manual input of Employee ID and Policy ID - submitted via AJAX *@
+<form id="premiumCalculationForm" asp-controller="PremiumCalculator" asp-action="CalculatePremium" method="post">
+    @* Add a hidden field for CSRF protection if needed for form posts *@
+    @* @Html.AntiForgeryToken() *@
+
+    @* Input fields with Bootstrap form-group and form-control *@
+    <div class="form-group mb-3">
+        @* Added margin-bottom *@
+        <label for="employeeId" class="form-label">Employee ID:</label> @* Use form-label for Bootstrap styling *@
+        @* Input field for Employee ID. Name attribute is important for model binding. *@
+        <input type="number" id="employeeId" name="employeeId" class="form-control" required />
+    </div>
+    <div class="form-group mb-3">
+        @* Added margin-bottom *@
+        <label for="policyId" class="form-label">Policy ID:</label> @* Use form-label for Bootstrap styling *@
+        @* Input field for Policy ID. Name attribute is important for model binding. *@
+        <input type="number" id="policyId" name="policyId" class="form-control" required />
+    </div>
+    <button type="submit" class="btn btn-primary mt-3">Calculate Premium</button> @* Added margin-top to button, use Bootstrap button class *@
+</form>
+
+@* Display area for the calculated premium - updated by AJAX JavaScript *@
+@* Use Bootstrap alert classes and initially hide *@
+<div id="premiumResult" class="alert alert-success mt-3" style="display: none;">
+    <strong>Calculated Premium:</strong> <span id="calculatedPremiumAmount"></span>
+</div>
+
+@section Scripts {
+    @{
+        await Html.RenderPartialAsync("_ValidationScriptsPartial");
+    }
+    @* Add jQuery library if not already included in your layout file *@
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
+
+    <script>
+        $(document).ready(function () {
+            // Get a reference to the form
+            var premiumForm = $('#premiumCalculationForm');
+            // Get references to the result display area and the span for the amount
+            var premiumResultDiv = $('#premiumResult');
+            var calculatedPremiumSpan = $('#calculatedPremiumAmount');
+
+            // Attach a submit event handler to the form
+            premiumForm.submit(function (event) {
+                // Prevent the default form submission (which would cause a page reload)
+                event.preventDefault();
+
+                // Get the values from the input fields
+                var employeeId = $('#employeeId').val();
+                var policyId = $('#policyId').val();
+
+                // Basic validation (optional, server-side validation is also important)
+                if (!employeeId || !policyId) {
+                    // Use Bootstrap alert styling for simple client-side validation message
+                    premiumResultDiv.removeClass('alert-success').addClass('alert-danger').text('Please enter both Employee ID and Policy ID.').show();
+                    return; // Stop the function if validation fails
+                }
+
+                // Hide previous results and clear the amount
+                premiumResultDiv.hide().removeClass('alert-success alert-danger').text(''); // Clear text and classes
+                calculatedPremiumSpan.text(''); // Clear the specific amount span
+
+                // Perform the AJAX POST request
+                $.ajax({
+                    url: premiumForm.attr('action'), // Get the URL from the form's asp-action and asp-controller
+                    type: premiumForm.attr('method'), // Get the method from the form (should be POST)
+                    data: { employeeId: employeeId, policyId: policyId }, // Data to send to the controller
+                    // If you are using [ValidateAntiForgeryToken], you would need to include the token here
+                    // headers: { "RequestVerificationToken": $('input[name="__RequestVerificationToken"]').val() },
+                    success: function (response) {
+                        // This function is called if the AJAX request is successful
+                        if (response && response.premium !== undefined) {
+                            // Display the calculated premium
+                            calculatedPremiumSpan.text('$' + response.premium.toFixed(2)); // Format to 2 decimal places
+                            premiumResultDiv.removeClass('alert-danger').addClass('alert-success').show(); // Show success alert
+                        } else {
+                            // Handle unexpected response format
+                            premiumResultDiv.removeClass('alert-success').addClass('alert-danger').text('Could not calculate premium.'); // Show error alert directly in the div
+                        }
+                    },
+                    error: function (xhr, status, error) {
+                        // This function is called if the AJAX request fails
+                        console.error("AJAX Error:", status, error);
+                        premiumResultDiv.removeClass('alert-success').addClass('alert-danger').text('Error calculating premium. Please try again.'); // Show error alert directly in the div
+                    }
+                });
+            });
+        });
+    </script>
+}
+
+
+
+

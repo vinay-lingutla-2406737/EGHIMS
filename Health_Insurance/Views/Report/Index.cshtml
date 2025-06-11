@@ -1,0 +1,31 @@
+﻿@{
+    ViewData["Title"] = "Reports Dashboard";
+}
+
+<h1 class="mb-4">Reports Dashboard</h1>
+
+<p class="lead">Select a report to view or export data.</p>
+
+<div class="row">
+    <div class="col-md-8">
+        <div class="list-group">
+            <a asp-action="GenerateEmployeeReport" class="list-group-item list-group-item-action">
+                <h5 class="mb-1">Employee Report</h5>
+                <p class="mb-1">View details of all employees, including their associated organizations.</p>
+            </a>
+            <a asp-action="GeneratePolicyReport" class="list-group-item list-group-item-action">
+                <h5 class="mb-1">Policy Report</h5>
+                <p class="mb-1">View details of all available insurance policies.</p>
+            </a>
+            <a asp-action="GenerateEnrollmentReport" class="list-group-item list-group-item-action">
+                <h5 class="mb-1">Enrollment Report</h5>
+                <p class="mb-1">View details of all policy enrollments, including employee and policy information.</p>
+            </a>
+            <a asp-action="GenerateClaimReport" class="list-group-item list-group-item-action">
+                <h5 class="mb-1">Claim Report</h5>
+                <p class="mb-1">View details of all submitted claims, including related employee and policy information.</p>
+            </a>
+            @* Add more report links here as needed *@
+        </div>
+    </div>
+</div>
