@@ -11,6 +11,8 @@ using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
 using System.Security.Claims;
 using System.Threading.Tasks;
+using System; // Add this
+using Health_Insurance.Models;
 
 namespace Health_Insurance.Controllers
 {
@@ -48,7 +50,8 @@ namespace Health_Insurance.Controllers
                 else if (User.IsInRole("HR"))
                 {
                     // HR personnel might also manage employees, so redirect them to Employee/Index
-                    return RedirectToAction("Index", "Employee");
+                    //return RedirectToAction("Index", "Employee");
+                    return RedirectToAction("HRDashboard", "Account");
                 }
                 // --- END NEW ---
                 return RedirectToAction("Index", "Home"); // Fallback
@@ -132,11 +135,73 @@ namespace Health_Insurance.Controllers
             // --- NEW: Redirect HR personnel after login ---
             else if (userRole == "HR")
             {
-                return RedirectToAction("Index", "Employee"); // HR also goes to Employee management initially
+                return RedirectToAction("HRDashboard", "Account"); // HR also goes to Employee management initially
             }
             // --- END NEW ---
             return RedirectToAction("Index", "Home"); // Fallback redirect
         }
+
+        [Authorize(Roles = "HR,Admin")] // Both HR and Admin can access this dashboard view
+        public async Task<IActionResult> HRDashboard()
+        {
+            ViewData["Title"] = "HR Dashboard";
+
+            var viewModel = new HRDashboardViewModel();
+
+            // Fetch dashboard summary data
+            viewModel.TotalEmployees = await _context.Employees.CountAsync();
+            viewModel.TotalOrganizations = await _context.Organizations.CountAsync();
+
+            // --- IMPORTANT: Choose ONE of these options for ActivePoliciesCount ---
+
+            // Option 1: Count ALL policies in the system (simplest)
+            // If "Active Policies" simply means all policies that are currently defined in your database.
+            viewModel.ActivePoliciesCount = await _context.Policies.CountAsync();
+
+            // Option 2: Count policies that have at least one 'ACTIVE' enrollment (more business logic-driven)
+            // This assumes your Enrollment model has a 'Status' property (e.g., "ACTIVE", "INACTIVE").
+            // This will give you the number of distinct policies that are currently being used by employees.
+            // Uncomment the following lines and comment out Option 1 if you prefer this.
+            // viewModel.ActivePoliciesCount = await _context.Enrollments
+            //                                                 .Where(e => e.Status == "ACTIVE") // Filter by active enrollments
+            //                                                 .Select(e => e.PolicyId)        // Select only the policy IDs
+            //                                                 .Distinct()                     // Get unique policy IDs
+            //                                                 .CountAsync();                  // Count them
+
+            // --- End of ActivePoliciesCount options ---
+
+
+            viewModel.TotalClaimsSubmitted = await _context.Claims.CountAsync();
+            viewModel.PendingClaimsCount = await _context.Claims.CountAsync(c => c.ClaimStatus == "Pending"); // Assuming "Pending" status
+
+            // Fetch recent enrollments
+            viewModel.RecentEnrollments = await _context.Enrollments
+                                                        .Include(e => e.Employee) // Load Employee data
+                                                        .Include(e => e.Policy)   // Load Policy data
+                                                        .OrderByDescending(e => e.EnrollmentDate)
+                                                        .Take(5) // Get top 5 recent enrollments
+                                                        .ToListAsync();
+
+            // Fetch recent claims
+            viewModel.RecentClaims = await _context.Claims
+                                            .Include(c => c.Enrollment)
+                                                .ThenInclude(en => en.Employee) // Load Employee via Enrollment
+                                            .Include(c => c.Enrollment)
+                                                .ThenInclude(en => en.Policy)   // Load Policy via Enrollment
+                                            .OrderByDescending(c => c.ClaimDate)
+                                            .Take(5) // Get top 5 recent claims
+                                            .ToListAsync();
+
+            return View(viewModel);
+        }
+
+
+
+
+
+
+
+
 
         // GET: /Account/Logout
         [HttpGet]
@@ -349,6 +414,124 @@ namespace Health_Insurance.Controllers
                     notEnrolledCount++;
                 }
             }
+
+            return Json(new { enrolled = enrolledCount, notEnrolled = notEnrolledCount });
+        }
+
+
+
+        [HttpGet("/api/dashboard/hr-employees")]
+        [Authorize(Roles = "HR,Admin")] // Both HR and Admin can access employee data
+        public async Task<JsonResult> GetHrEmployeesApi()
+        {
+            var employees = await _context.Employees
+                                        .Include(e => e.Organization) // Include Organization for its name
+                                        .ToListAsync();
+
+            var employeesForFrontend = employees.Select(e => new
+            {
+                id = e.EmployeeId,
+                name = e.Name,
+                email = e.Email ?? "N/A",
+                phone = e.Phone ?? "N/A",
+                address = e.Address ?? "N/A",
+                designation = e.Designation ?? "N/A", // Maps to 'department' in JS
+                organizationId = e.OrganizationId,
+                organizationName = e.Organization?.OrganizationName ?? "N/A", // Safely get organization name
+                username = e.Username ?? "N/A"
+                // HireDate, Status, Gender are not available in your provided Employee model.
+            }).ToList();
+
+            return Json(employeesForFrontend);
+        }
+
+        // API Endpoint for HR Claims Data (Replicated from Admin, authorized for HR)
+        [HttpGet("/api/dashboard/hr-claims")]
+        [Authorize(Roles = "HR,Admin")] // HR also needs to see claims
+        public async Task<JsonResult> GetHrClaimsApi()
+        {
+            var claims = await _context.Claims
+                                    .Include(c => c.Enrollment)
+                                        .ThenInclude(e => e.Employee)
+                                    .Include(c => c.Enrollment)
+                                        .ThenInclude(e => e.Policy)
+                                    .ToListAsync();
+
+            var claimsForFrontend = claims.Select(c => new
+            {
+                id = c.ClaimId,
+                employeeName = c.Enrollment?.Employee?.Name ?? "N/A",
+                policyType = c.Enrollment?.Policy?.PolicyType ?? "N/A",
+                claimDate = c.ClaimDate.ToString("yyyy-MM-dd"), // Format date for JS
+                requestedAmount = c.ClaimAmount,
+                // If Claim model does not have 'ApprovedAmount', this is a derived value.
+                approvedAmount = (c.ClaimStatus?.Equals("APPROVED", StringComparison.OrdinalIgnoreCase) == true ? c.ClaimAmount : 0),
+                status = c.ClaimStatus ?? "N/A"
+            }).ToList();
+
+            return Json(claimsForFrontend);
+        }
+
+        // API Endpoint for HR Organizations Data (Replicated from Admin, authorized for HR)
+        [HttpGet("/api/dashboard/hr-organizations")]
+        [Authorize(Roles = "HR,Admin")] // HR also needs to see organizations
+        public async Task<JsonResult> GetHrOrganizationsApi()
+        {
+            var organizations = await _context.Organizations.ToListAsync();
+
+            var organizationsForFrontend = organizations.Select(o => new
+            {
+                id = o.OrganizationId,
+                name = o.OrganizationName,
+                contactPerson = o.ContactPerson ?? "N/A",
+                contactEmail = o.ContactEmail ?? "N/A"
+            }).ToList();
+
+            return Json(organizationsForFrontend);
+        }
+
+        // API Endpoint for HR Enrollments Data (New for HR Dashboard)
+        [HttpGet("/api/dashboard/hr-enrollments")]
+        [Authorize(Roles = "HR,Admin")] // HR needs access to enrollments
+        public async Task<JsonResult> GetHrEnrollmentsApi()
+        {
+            var enrollments = await _context.Enrollments
+                                            .Include(e => e.Employee) // Include Employee for name
+                                            .Include(e => e.Policy)   // Include Policy for name and type
+                                            .ToListAsync();
+
+            var enrollmentsForFrontend = enrollments.Select(e => new
+            {
+                id = e.EnrollmentId,
+                employeeName = e.Employee?.Name ?? "N/A",
+                policyName = e.Policy?.PolicyName ?? "N/A",
+                policyType = e.Policy?.PolicyType ?? "N/A",
+                enrollmentDate = e.EnrollmentDate.ToString("yyyy-MM-dd"), // Format date for JS
+                status = e.Status ?? "N/A"
+            }).ToList();
+
+            return Json(enrollmentsForFrontend);
+        }
+
+        // --- Shared API Endpoint (Used by both Admin and HR Overviews) ---
+        // IMPORTANT: Ensure this method appears ONLY ONCE in your AccountController.cs
+        // If you have a duplicate in another section (e.g., Admin APIs), remove that duplicate.
+        [HttpGet("/api/dashboard/employee-enrollment-chart-data")]
+        [Authorize(Roles = "Admin,HR")] // Accessible by both Admin and HR
+        public async Task<IActionResult> GetEmployeeEnrollmentChartData1()
+        {
+            var totalEmployees = await _context.Employees.CountAsync();
+
+            // Count employees with an 'ACTIVE' enrollment status
+            var enrolledEmployeeIds = await _context.Enrollments
+                                                    .Where(e => e.Status != null && e.Status.ToUpper() == "ACTIVE")
+                                                    .Select(e => e.EmployeeId)
+                                                    .Distinct()
+                                                    .ToListAsync();
+            var enrolledCount = enrolledEmployeeIds.Count;
+
+            // Employees not having an 'ACTIVE' enrollment (or no enrollment at all)
+            var notEnrolledCount = totalEmployees - enrolledCount;
 
             return Json(new { enrolled = enrolledCount, notEnrolled = notEnrolledCount });
         }

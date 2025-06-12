@@ -1,541 +1,703 @@
-﻿
-    <script src="https://cdn.jsdelivr.net/npm/lucide@latest"></script>
-    <style>
-        /* Custom styles for Chart.js canvases to be responsive */
-        canvas {
-            max-width: 100%;
-            height: auto; /* Maintain aspect ratio */
+﻿@{
+    ViewData["Title"] = "HR Dashboard";
+    Layout = "~/Views/Shared/_Layout.cshtml"; // Ensure this points to your shared layout
+}
+
+<style>
+    /* Custom styles for the dashboard */
+    .dashboard-section {
+        margin-bottom: 2rem;
+    }
+
+    .kpi-icon {
+        font-size: 2.5rem; /* Larger icons for KPIs */
+        margin-bottom: 0.5rem;
+    }
+
+    .kpi-title {
+        font-size: 1rem;
+        font-weight: 600;
+        color: #6c757d; /* text-secondary */
+    }
+
+    .kpi-value {
+        font-size: 2.5rem;
+        font-weight: 700;
+    }
+    /* Specific colors for KPI values, matching Bootstrap themes */
+    .text-primary {
+        color: #0d6efd !important;
+    }
+
+    .text-success {
+        color: #198754 !important;
+    }
+
+    .text-secondary {
+        color: #6c757d !important;
+    }
+
+    .text-warning {
+        color: #ffc107 !important;
+    }
+
+    .text-info { /* Added for Enrollments KPI */
+        color: #0dcaf0 !important;
+    }
+
+    .status-badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.25rem 0.625rem;
+        border-radius: 9999px; /* pill shape */
+        font-size: 0.75rem;
+        font-weight: 500;
+    }
+
+        .status-badge i {
+            margin-right: 0.25rem;
         }
 
-        /* Ensure font-inter is applied */
-        body {
-            font-family: 'Inter', sans-serif;
-            -webkit-font-smoothing: antialiased;
-            -moz-osx-font-smoothing: grayscale;
+        .status-badge.approved {
+            background-color: #d1fae5;
+            color: #065f46;
         }
-    </style>
-</head>
-<body class="flex flex-col h-screen bg-gray-100 font-inter antialiased">
+        /* Tailwind-like green */
+        .status-badge.submitted {
+            background-color: #dbeafe;
+            color: #1e40af;
+        }
+        /* Tailwind-like blue */
+        .status-badge.rejected {
+            background-color: #fee2e2;
+            color: #991b1b;
+        }
+    /* Tailwind-like red */
+</style>
 
-    <!-- Top Navigation Bar -->
-    
+<div class="d-flex flex-column min-vh-100">
     <!-- Main Content Area -->
-    <main id="main-content" class="flex-1 overflow-auto p-4 bg-gray-100"></main>
+    <main class="flex-grow-1 p-4">
+        <div id="loading-spinner" class="d-flex justify-content-center align-items-center" style="display: none;">
+            @* <div class="spinner-border text-primary" role="status">
+                <span class="visually-hidden">Loading...</span>
+            </div> *@
+            <h2 class="ms-3">HR dashboard data</h2>
+        </div>
+
+        
+
+        <!-- HR Dashboard Navigation Buttons -->
+        <div class="d-flex justify-content-center mb-4" id="hr-dashboard-nav-buttons">
+            <div class="btn-group" role="group">
+                <button type="button" class="btn btn-outline-primary active" data-section="hr-overview"><i class="fas fa-chart-line me-2"></i>Overview</button>
+                <button type="button" class="btn btn-outline-primary" data-section="hr-employees"><i class="fas fa-users me-2"></i>Employees</button>
+                <button type="button" class="btn btn-outline-primary" data-section="hr-claims"><i class="fas fa-hand-holding-usd me-2"></i>Claims</button>
+                <button type="button" class="btn btn-outline-primary" data-section="hr-organizations"><i class="fas fa-building me-2"></i>Organizations</button>
+                <button type="button" class="btn btn-outline-primary" data-section="hr-enrollments"><i class="fas fa-file-invoice-dollar me-2"></i>Enrollments</button>
+            </div>
+        </div>
+
+        <!-- HR Dashboard Sections -->
+        <!-- HR Overview Section -->
+        <div id="hr-overview-section" class="dashboard-section">
+            
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4 mb-4">
+                <div class="col">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <i class="fas fa-user-friends kpi-icon text-primary"></i>
+                            <h3 class="kpi-title">Total Employees</h3>
+                            <p class="kpi-value text-primary" id="kpi-hr-total-employees"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <i class="fas fa-clipboard-list kpi-icon text-info"></i>
+                            <h3 class="kpi-title">Total Enrollments</h3>
+                            <p class="kpi-value text-info" id="kpi-hr-total-enrollments"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <i class="fas fa-hand-holding-usd kpi-icon text-warning"></i>
+                            <h3 class="kpi-title">Total Claims</h3>
+                            <p class="kpi-value text-warning" id="kpi-hr-total-claims"></p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <i class="fas fa-building kpi-icon text-secondary"></i>
+                            <h3 class="kpi-title">Total Organizations</h3>
+                            <p class="kpi-value text-secondary" id="kpi-hr-total-organizations"></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row g-4 mb-4">
+                <div class="col-lg-6">
+                    <div class="card h-100 p-3">
+                        <h3 class="h5 fw-semibold text-gray-700 mb-3">Employee Enrollment Status</h3>
+                        <canvas id="employeeEnrollmentChart" class="w-100" style="max-height: 300px;"></canvas>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="card h-100 p-3">
+                        <h3 class="h5 fw-semibold text-gray-700 mb-3">Claims Status Distribution</h3>
+                        <canvas id="claimsStatusChart" class="w-100" style="max-height: 300px;"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card mb-4 p-3">
+                <h3 class="h5 fw-semibold text-gray-700 mb-3">Recent Enrollments</h3>
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Enrollment ID</th>
+                                <th>Employee</th>
+                                <th>Policy</th>
+                                <th>Enrollment Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hrRecentEnrollmentsTableBody">
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- HR Employees Section -->
+        <div id="hr-employees-section" class="dashboard-section" style="display: none;">
+            <h2 class="h3 fw-bold text-gray-800 mb-4">Employee Directory (HR View)</h2>
+            <div class="card mb-4 p-3">
+                <h3 class="h5 fw-semibold text-gray-700 mb-3">All Employees</h3>
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Email</th>
+                                <th>Phone</th>
+                                <th>Address</th>
+                                <th>Designation</th>
+                                <th>Organization ID</th>
+                                <th>Organization Name</th>
+                                <th>Username</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hrEmployeesTableBody">
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- HR Claims Section -->
+        <div id="hr-claims-section" class="dashboard-section" style="display: none;">
+            <h2 class="h3 fw-bold text-gray-800 mb-4">Claims Details (HR View)</h2>
+            <div class="d-flex mb-3">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary active" data-filter="All">All</button>
+                    <button type="button" class="btn btn-outline-primary" data-filter="Submitted">Submitted</button>
+                    <button type="button" class="btn btn-outline-primary" data-filter="Approved">Approved</button>
+                    <button type="button" class="btn btn-outline-primary" data-filter="Rejected">Rejected</button>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-hover table-striped">
+                    <thead class="bg-light">
+                        <tr>
+                            <th>Claim ID</th>
+                            <th>Employee</th>
+                            <th>Policy Type</th>
+                            <th>Claim Date</th>
+                            <th>Requested Amt.</th>
+                            <th>Approved Amt.</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="hrClaimsTableBody">
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- HR Organizations Section -->
+        <div id="hr-organizations-section" class="dashboard-section" style="display: none;">
+            <h2 class="h3 fw-bold text-gray-800 mb-4">Organization Details (HR View)</h2>
+            <div class="card mb-4 p-3">
+                <h3 class="h5 fw-semibold text-gray-700 mb-3">All Registered Organizations</h3>
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>ID</th>
+                                <th>Name</th>
+                                <th>Contact Person</th>
+                                <th>Contact Email</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hrOrganizationsTableBody">
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- HR Enrollments Section (New) -->
+        <div id="hr-enrollments-section" class="dashboard-section" style="display: none;">
+            <h2 class="h3 fw-bold text-gray-800 mb-4">Enrollment Details (HR View)</h2>
+            <div class="card mb-4 p-3">
+                <h3 class="h5 fw-semibold text-gray-700 mb-3">All Enrollments</h3>
+                <div class="d-flex mb-3">
+                    <div class="btn-group" role="group">
+                        <button type="button" class="btn btn-outline-primary active" data-filter="All">All</button>
+                        <button type="button" class="btn btn-outline-primary" data-filter="ACTIVE">Active</button>
+                        <button type="button" class="btn btn-outline-primary" data-filter="CANCELLED">Cancelled</button>
+                    </div>
+                </div>
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped">
+                        <thead class="bg-light">
+                            <tr>
+                                <th>Enrollment ID</th>
+                                <th>Employee Name</th>
+                                <th>Policy Name</th>
+                                <th>Policy Type</th>
+                                <th>Enrollment Date</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody id="hrEnrollmentsTableBody">
+                            <!-- Data will be populated by JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </main>
+</div>
+
+@section Scripts {
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
     <script>
-        // Store chart instances globally to destroy them when switching sections
-        let currentCharts = {};
+        // --- Data Variables ---
+        let hrEmployeesData = [];
+        let hrClaimsData = [];
+        let hrOrganizationsData = [];
+        let hrEnrollmentsData = [];
 
-        // Utility to generate mock employee data
-   
-
-        // Utility to generate mock claim data
-        const generateClaimData = (num) => {
-            const claimTypes = ['Medical', 'Dental', 'Vision', 'Life', 'Disability'];
-            const statuses = ['Pending', 'Approved', 'Denied'];
-            const claims = [];
-
-            for (let i = 1; i <= num; i++) {
-                claims.push({
-                    id: `C${1000 + i}`,
-                    employee: `Employee ${Math.floor(Math.random() * 50) + 1}`,
-                    type: claimTypes[Math.floor(Math.random() * claimTypes.length)],
-                    amount: (Math.random() * 1000 + 50).toFixed(2),
-                    date: `202${Math.floor(Math.random() * 5)}-${Math.floor(Math.random() * 11) + 1}-${Math.floor(Math.random() * 28) + 1}`,
-                    status: statuses[Math.floor(Math.random() * statuses.length)],
-                });
-            }
-            return claims;
-        };
-
-        // Mock data generated once on page load
-        const allEmployees = generateEmployeeData(50);
-        const allClaims = generateClaimData(30);
-
-        // Function to destroy all active Chart.js instances
-        const destroyCharts = () => {
-            for (const chartId in currentCharts) {
-                if (currentCharts[chartId]) {
-                    currentCharts[chartId].destroy();
-                    delete currentCharts[chartId];
-                }
-            }
-        };
-
-        // Initializes Chart.js charts for the Dashboard Overview section
-        const initDashboardCharts = (employees, claims) => {
-            destroyCharts(); // Clear existing charts
-
-            // Employees by Department Bar Chart
-            const employeesByDepartment = employees.reduce((acc, emp) => {
-                acc[emp.department] = (acc[emp.department] || 0) + 1;
-                return acc;
-            }, {});
-            const departmentChartData = Object.keys(employeesByDepartment).map(dept => ({
-                name: dept,
-                employees: employeesByDepartment[dept]
-            }));
-
-            const ctxDept = document.getElementById('employeesByDepartmentChart');
-            if (ctxDept) {
-                currentCharts.employeesByDepartmentChart = new Chart(ctxDept, {
-                    type: 'bar',
-                    data: {
-                        labels: departmentChartData.map(d => d.name),
-                        datasets: [{
-                            label: 'Number of Employees',
-                            data: departmentChartData.map(d => d.employees),
-                            backgroundColor: '#8884d8',
-                            borderRadius: 10,
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false }
-                        },
-                        scales: {
-                            y: { beginAtZero: true }
-                        }
-                    }
-                });
-            }
-
-            // Claims Status Distribution Pie Chart
-            const claimsByStatus = claims.reduce((acc, claim) => {
-                acc[claim.status] = (acc[claim.status] || 0) + 1;
-                return acc;
-            }, {});
-            const claimsStatusChartData = Object.keys(claimsByStatus).map(status => ({
-                name: status,
-                value: claimsByStatus[status]
-            }));
-            const PIE_COLORS = ['#0088FE', '#00C49F', '#FFBB28']; // Approved, Pending, Denied
-
-            const ctxClaimsStatus = document.getElementById('claimsStatusDistributionChart');
-            if (ctxClaimsStatus) {
-                currentCharts.claimsStatusDistributionChart = new Chart(ctxClaimsStatus, {
-                    type: 'pie',
-                    data: {
-                        labels: claimsStatusChartData.map(d => d.name),
-                        datasets: [{
-                            data: claimsStatusChartData.map(d => d.value),
-                            backgroundColor: claimsStatusChartData.map((d, i) => PIE_COLORS[i % PIE_COLORS.length]),
-                            hoverOffset: 4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                    }
-                });
-            }
-
-            // Claims Trend Over Time Line Chart (using mock data from the React version)
-            const claimsOverTimeData = [
-                { month: 'Jan', claims: 40 }, { month: 'Feb', claims: 30 }, { month: 'Mar', claims: 50 },
-                { month: 'Apr', claims: 45 }, { month: 'May', claims: 60 }, { month: 'Jun', claims: 55 },
-                { month: 'Jul', claims: 70 }, { month: 'Aug', claims: 65 }, { month: 'Sep', claims: 80 },
-                { month: 'Oct', claims: 75 }, { month: 'Nov', claims: 90 }, { month: 'Dec', claims: 85 }
-            ];
-
-            const ctxClaimsTrend = document.getElementById('claimsTrendOverTimeChart');
-            if (ctxClaimsTrend) {
-                currentCharts.claimsTrendOverTimeChart = new Chart(ctxClaimsTrend, {
-                    type: 'line',
-                    data: {
-                        labels: claimsOverTimeData.map(d => d.month),
-                        datasets: [{
-                            label: 'Number of Claims',
-                            data: claimsOverTimeData.map(d => d.claims),
-                            borderColor: '#82ca9d',
-                            tension: 0.3,
-                            fill: false,
-                            pointRadius: 6,
-                            pointHoverRadius: 8
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false }
-                        },
-                        scales: {
-                            y: { beginAtZero: true }
-                        }
-                    }
-                });
-            }
-        };
-
-        // Initializes Chart.js charts for the Claims Overview section
-        const initClaimsCharts = (claims) => {
-            destroyCharts(); // Clear existing charts
-
-            // Claims by Status Pie Chart (re-used logic from Dashboard but specific to this section)
-            const claimsByStatus = claims.reduce((acc, claim) => {
-                acc[claim.status] = (acc[claim.status] || 0) + 1;
-                return acc;
-            }, {});
-            const claimsStatusChartData = Object.keys(claimsByStatus).map(status => ({
-                name: status,
-                value: claimsByStatus[status]
-            }));
-            const PIE_COLORS = ['#0088FE', '#00C49F', '#FFBB28']; // Approved, Pending, Denied
-
-            const ctxClaimsStatus = document.getElementById('claimsOverviewStatusChart');
-            if (ctxClaimsStatus) {
-                currentCharts.claimsOverviewStatusChart = new Chart(ctxClaimsStatus, {
-                    type: 'pie',
-                    data: {
-                        labels: claimsStatusChartData.map(d => d.name),
-                        datasets: [{
-                            data: claimsStatusChartData.map(d => d.value),
-                            backgroundColor: claimsStatusChartData.map((d, i) => PIE_COLORS[i % PIE_COLORS.length]),
-                            hoverOffset: 4
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                    }
-                });
-            }
-
-            // Claims by Type Bar Chart
-            const claimsByType = claims.reduce((acc, claim) => {
-                acc[claim.type] = (acc[claim.type] || 0) + 1;
-                return acc;
-            }, {});
-            const claimsTypeChartData = Object.keys(claimsByType).map(type => ({
-                name: type,
-                claims: claimsByType[type]
-            }));
-
-            const ctxClaimsType = document.getElementById('claimsOverviewTypeChart');
-            if (ctxClaimsType) {
-                currentCharts.claimsOverviewTypeChart = new Chart(ctxClaimsType, {
-                    type: 'bar',
-                    data: {
-                        labels: claimsTypeChartData.map(d => d.name),
-                        datasets: [{
-                            label: 'Number of Claims',
-                            data: claimsTypeChartData.map(d => d.claims),
-                            backgroundColor: '#82ca9d',
-                            borderRadius: 10,
-                        }]
-                    },
-                    options: {
-                        responsive: true,
-                        maintainAspectRatio: false,
-                        plugins: {
-                            legend: { display: false }
-                        },
-                        scales: {
-                            y: { beginAtZero: true }
-                        }
-                    }
-                });
-            }
-        };
+        // --- Chart Instances ---
+        let employeeEnrollmentChartInstance = null; // Used by HR Overview now
+        let claimsStatusChartInstance = null; // Used by HR Overview now
 
 
-        // Renders the Dashboard Overview content
-        const renderDashboardOverview = (employees, claims) => {
-            const totalEmployees = employees.length;
-            const activeEmployees = employees.filter(emp => emp.status === 'Active').length;
-            const pendingClaims = claims.filter(claim => claim.status === 'Pending').length;
-            const totalClaims = claims.length;
+        // --- Utility Functions ---
+        function formatCurrency(amount) {
+            const numAmount = parseFloat(amount);
+            if (isNaN(numAmount)) return amount;
+            return `₹${numAmount.toLocaleString('en-IN')}`;
+        }
 
-            return `
-                <div class="p-6 bg-gray-50 min-h-screen rounded-lg shadow-inner">
-                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Dashboard Overview</h2>
-
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-                        <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between transition duration-300 ease-in-out hover:scale-105 transform">
-                            <div>
-                                <p class="text-sm font-medium text-gray-500">Total Employees</p>
-                                <p class="text-4xl font-semibold text-indigo-600">${totalEmployees}</p>
-                            </div>
-                            <!-- Lucide Users Icon -->
-                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users text-indigo-400 opacity-70"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
-                        </div>
-                        <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between transition duration-300 ease-in-out hover:scale-105 transform">
-                            <div>
-                                <p class="text-sm font-medium text-gray-500">Active Employees</p>
-                                <p class="text-4xl font-semibold text-green-600">${activeEmployees}</p>
-                            </div>
-                            <!-- Lucide Briefcase Icon -->
-                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-briefcase text-green-400 opacity-70"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><path d="M12 12h.01"/></svg>
-                        </div>
-                        <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between transition duration-300 ease-in-out hover:scale-105 transform">
-                            <div>
-                                <p class="text-sm font-medium text-gray-500">Pending Claims</p>
-                                <p class="text-4xl font-semibold text-yellow-600">${pendingClaims}</p>
-                            </div>
-                            <!-- Lucide ClipboardCheck Icon -->
-                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-check text-yellow-400 opacity-70"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
-                        </div>
-                        <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between transition duration-300 ease-in-out hover:scale-105 transform">
-                            <div>
-                                <p class="text-sm font-medium text-gray-500">Total Claims</p>
-                                <p class="text-4xl font-semibold text-purple-600">${totalClaims}</p>
-                            </div>
-                            <!-- Lucide FileText Icon -->
-                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text text-purple-400 opacity-70"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
-                        </div>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="bg-white p-6 rounded-xl shadow-md">
-                            <h3 class="text-lg font-semibold text-gray-700 mb-4">Employees by Department</h3>
-                            <div class="relative h-72">
-                                <canvas id="employeesByDepartmentChart"></canvas>
-                            </div>
-                        </div>
-
-                        <div class="bg-white p-6 rounded-xl shadow-md">
-                            <h3 class="text-lg font-semibold text-gray-700 mb-4">Claims Status Distribution</h3>
-                            <div class="relative h-72">
-                                <canvas id="claimsStatusDistributionChart"></canvas>
-                            </div>
-                        </div>
-
-                        <div class="bg-white p-6 rounded-xl shadow-md lg:col-span-2">
-                            <h3 class="text-lg font-semibold text-gray-700 mb-4">Claims Trend Over Time</h3>
-                            <div class="relative h-72">
-                                <canvas id="claimsTrendOverTimeChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        };
-
-        // Renders the Employees Management content
-        const renderEmployeesManagement = (employees) => {
-            let employeeRows = employees.map(employee => `
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${employee.id}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${employee.name}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${employee.email}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${employee.department}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${employee.title}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            employee.status === 'Active' ? 'bg-green-100 text-green-800' :
-                            employee.status === 'On Leave' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
-                        }">
-                            ${employee.status}
-                        </span>
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${employee.hireDate}</td>
-                </tr>
-            `).join('');
-
-            return `
-                <div class="p-6 bg-gray-50 min-h-screen rounded-lg shadow-inner">
-                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Employees Management</h2>
-                    <div class="bg-white rounded-xl shadow-md overflow-hidden">
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-100">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hire Date</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                ${employeeRows}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            `;
-        };
-
-        // Renders the Reports Generation content
-        const renderReportsGeneration = () => {
-            const reportTypes = [
-                { name: "Employee Headcount Report", description: "Overview of total employees and departmental distribution." },
-                { name: "Claims Summary Report", description: "Summary of all insurance claims by type and status." },
-                { name: "Payroll Analysis Report", description: "Detailed breakdown of payroll expenses." },
-                { name: "Leave Tracking Report", description: "Insights into employee leave requests and approvals." },
-                { name: "Performance Review Report", description: "Aggregated data on employee performance." },
-            ];
-
-            let reportCards = reportTypes.map((report, index) => `
-                <div class="bg-white p-6 rounded-xl shadow-md transition duration-300 ease-in-out hover:shadow-lg">
-                    <h3 class="text-xl font-semibold text-gray-800 mb-2">${report.name}</h3>
-                    <p class="text-gray-600 mb-4">${report.description}</p>
-                    <button class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors duration-200 shadow-sm">
-                        Generate Report
-                    </button>
-                </div>
-            `).join('');
-
-            return `
-                <div class="p-6 bg-gray-50 min-h-screen rounded-lg shadow-inner">
-                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Reports Generation</h2>
-                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                        ${reportCards}
-                    </div>
-                </div>
-            `;
-        };
-
-        // Renders the Claims Overview content
-        const renderClaimsOverview = (claims) => {
-            let claimRows = claims.slice(0, 10).map(claim => `
-                <tr class="hover:bg-gray-50">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${claim.id}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${claim.employee}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${claim.type}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$${claim.amount}</td>
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${claim.date}</td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                            claim.status === 'Approved' ? 'bg-green-100 text-green-800' :
-                            claim.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
-                            'bg-red-100 text-red-800'
-                        }">
-                            ${claim.status}
-                        </span>
-                    </td>
-                </tr>
-            `).join('');
-
-            return `
-                <div class="p-6 bg-gray-50 min-h-screen rounded-lg shadow-inner">
-                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Claims Overview</h2>
-                    <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8">
-                        <h3 class="text-xl font-semibold text-gray-800 p-6 border-b">Recent Claims</h3>
-                        <table class="min-w-full divide-y divide-gray-200">
-                            <thead class="bg-gray-100">
-                                <tr>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Claim ID</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
-                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
-                                </tr>
-                            </thead>
-                            <tbody class="bg-white divide-y divide-gray-200">
-                                ${claimRows}
-                            </tbody>
-                        </table>
-                    </div>
-
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                        <div class="bg-white p-6 rounded-xl shadow-md">
-                            <h3 class="text-lg font-semibold text-gray-700 mb-4">Claims by Status</h3>
-                            <div class="relative h-72">
-                                <canvas id="claimsOverviewStatusChart"></canvas>
-                            </div>
-                        </div>
-
-                        <div class="bg-white p-6 rounded-xl shadow-md">
-                            <h3 class="text-lg font-semibold text-gray-700 mb-4">Claims by Type</h3>
-                            <div class="relative h-72">
-                                <canvas id="claimsOverviewTypeChart"></canvas>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            `;
-        };
-
-        // Renders the Organization Management content
-        const renderOrganizationManagement = () => {
-            return `
-                <div class="p-6 bg-gray-50 min-h-screen rounded-lg shadow-inner">
-                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Organization Management</h2>
-                    <div class="bg-white p-8 rounded-xl shadow-md text-center text-gray-700">
-                        <!-- Lucide Briefcase Icon -->
-                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-briefcase mx-auto mb-4 text-blue-500 opacity-70"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><path d="M12 12h.01"/></svg>
-                        <p class="text-lg mb-4">This section will allow you to manage your organizational structure, departments, and roles.</p>
-                        <p class="text-md text-gray-600">Features like department hierarchy, team assignments, and role-based access control can be implemented here.</p>
-                        <button class="mt-6 bg-indigo-500 text-white px-6 py-3 rounded-lg hover:bg-indigo-600 transition-colors duration-200 shadow-md">
-                            Manage Structure
-                        </button>
-                    </div>
-                </div>
-            `;
-        };
-
-        // Function to set the active section and render its content
-        const setActiveSection = (sectionName) => {
-            const mainContent = document.getElementById('main-content');
-            let contentHtml = '';
-
-            destroyCharts(); // Destroy existing charts before rendering new content
-
-            switch (sectionName) {
-                case 'dashboard':
-                    contentHtml = renderDashboardOverview(allEmployees, allClaims);
+        function getStatusBadgeHtml(status) {
+            let colorClass = '';
+            let iconClass = '';
+            switch (status?.toUpperCase()) {
+                case 'APPROVED':
+                case 'ACTIVE': // Added for enrollments
+                    colorClass = 'approved';
+                    iconClass = 'fas fa-check-circle';
                     break;
-                case 'employees':
-                    contentHtml = renderEmployeesManagement(allEmployees);
+                case 'SUBMITTED':
+                case 'PENDING': // For other pending statuses
+                    colorClass = 'submitted';
+                    iconClass = 'fas fa-clock';
                     break;
-                case 'reports':
-                    contentHtml = renderReportsGeneration();
-                    break;
-                case 'claims':
-                    contentHtml = renderClaimsOverview(allClaims);
-                    break;
-                case 'organization':
-                    contentHtml = renderOrganizationManagement();
+                case 'REJECTED':
+                case 'CANCELLED': // Added for enrollments
+                    colorClass = 'rejected';
+                    iconClass = 'fas fa-times-circle';
                     break;
                 default:
-                    contentHtml = renderDashboardOverview(allEmployees, allClaims);
+                    colorClass = 'secondary';
+                    iconClass = 'fas fa-question-circle';
+            }
+            return `<span class="status-badge ${colorClass}"><i class="${iconClass}"></i> ${status || 'N/A'}</span>`;
+        }
+
+        function showLoadingSpinner() {
+            document.getElementById('loading-spinner').style.display = 'flex';
+        }
+
+        function hideLoadingSpinner() {
+            document.getElementById('loading-spinner').style.display = 'none';
+        }
+
+        // --- Data Fetching Functions (HR Specific) ---
+
+        async function fetchHrDashboardData() {
+            showLoadingSpinner();
+            try {
+                const [hrEmployeesRes, hrClaimsRes, hrOrganizationsRes, hrEnrollmentsRes] = await Promise.all([
+                    fetch('/api/dashboard/hr-employees'),
+                    fetch('/api/dashboard/hr-claims'),
+                    fetch('/api/dashboard/hr-organizations'),
+                    fetch('/api/dashboard/hr-enrollments')
+                ]);
+
+                if (!hrEmployeesRes.ok) throw new Error(`HTTP error fetching HR employees: ${hrEmployeesRes.status} ${hrEmployeesRes.statusText}`);
+                if (!hrClaimsRes.ok) throw new Error(`HTTP error fetching HR claims: ${hrClaimsRes.status} ${hrClaimsRes.statusText}`);
+                if (!hrOrganizationsRes.ok) throw new Error(`HTTP error fetching HR organizations: ${hrOrganizationsRes.status} ${hrOrganizationsRes.statusText}`);
+                if (!hrEnrollmentsRes.ok) throw new Error(`HTTP error fetching HR enrollments: ${hrEnrollmentsRes.status} ${hrEnrollmentsRes.statusText}`);
+
+                hrEmployeesData = await hrEmployeesRes.json();
+                hrClaimsData = await hrClaimsRes.json();
+                hrOrganizationsData = await hrOrganizationsRes.json();
+                hrEnrollmentsData = await hrEnrollmentsRes.json();
+
+            } catch (error) {
+                console.error("Error fetching HR dashboard data:", error);
+                // In a real app, display a user-friendly error message
+            } finally {
+                hideLoadingSpinner();
+            }
+        }
+
+
+        // --- Render Functions (HR Dashboard) ---
+
+        async function renderHrOverviewSection() {
+            // KPI Cards
+            document.getElementById('kpi-hr-total-employees').textContent = hrEmployeesData.length;
+            document.getElementById('kpi-hr-total-enrollments').textContent = hrEnrollmentsData.length;
+            document.getElementById('kpi-hr-total-claims').textContent = hrClaimsData.length;
+            document.getElementById('kpi-hr-total-organizations').textContent = hrOrganizationsData.length;
+
+            // Charts
+            await initializeEmployeeEnrollmentChart(); // HR specific enrollment chart
+            renderClaimsStatusChart(); // HR specific claims status chart
+
+            // Tables
+            renderRecentEnrollmentsTable();
+        }
+
+        async function renderHrEmployeesSection() {
+            const tableBody = document.getElementById('hrEmployeesTableBody');
+            tableBody.innerHTML = '';
+
+            if (hrEmployeesData.length === 0) {
+                const row = tableBody.insertRow();
+                row.innerHTML = `<td colspan="9" class="text-center text-muted py-4">No employees found.</td>`;
+                return;
             }
 
-            mainContent.innerHTML = contentHtml;
-
-            // After rendering the HTML, initialize charts if the section contains them
-            if (sectionName === 'dashboard') {
-                initDashboardCharts(allEmployees, allClaims);
-            } else if (sectionName === 'claims') {
-                initClaimsCharts(allClaims);
-            }
-
-            // Update active navigation button styling
-            document.querySelectorAll('nav button').forEach(button => {
-                button.classList.remove('bg-indigo-600', 'text-white', 'shadow-lg');
-                button.classList.add('text-indigo-200', 'hover:bg-indigo-700', 'hover:text-white');
+            hrEmployeesData.forEach(employee => {
+                const row = tableBody.insertRow();
+                row.innerHTML = `
+                    <td>${employee.id}</td>
+                    <td>${employee.name || 'N/A'}</td>
+                    <td>${employee.email || 'N/A'}</td>
+                    <td>${employee.phone || 'N/A'}</td>
+                    <td>${employee.address || 'N/A'}</td>
+                    <td>${employee.designation || 'N/A'}</td>
+                    <td>${employee.organizationId || 'N/A'}</td>
+                    <td>${employee.organizationName || 'N/A'}</td>
+                    <td>${employee.username || 'N/A'}</td>
+                `;
             });
-            const activeButton = document.getElementById(`nav-${sectionName}`);
-            if (activeButton) {
-                activeButton.classList.remove('text-indigo-200', 'hover:bg-indigo-700', 'hover:text-white');
-                activeButton.classList.add('bg-indigo-600', 'text-white', 'shadow-lg');
+        }
+
+        async function renderHrClaimsSection(filterStatus = 'All') {
+            const tableBody = document.getElementById('hrClaimsTableBody');
+            tableBody.innerHTML = '';
+
+            const filteredClaims = filterStatus === 'All'
+                ? hrClaimsData
+                : hrClaimsData.filter(claim => claim.status?.toUpperCase() === filterStatus?.toUpperCase());
+
+            if (filteredClaims.length === 0) {
+                const row = tableBody.insertRow();
+                row.innerHTML = `<td colspan="7" class="text-center text-muted py-4">No claims found for this status.</td>`;
+                return;
             }
 
-            // Manually refresh lucide icons if they don't render automatically on dynamic content injection
-            if (typeof lucide !== 'undefined' && lucide.createIcons) {
-                lucide.createIcons();
+            filteredClaims.forEach(claim => {
+                const row = tableBody.insertRow();
+                row.innerHTML = `
+                    <td>${claim.id}</td>
+                    <td>${claim.employeeName || 'N/A'}</td>
+                    <td>${claim.policyType || 'N/A'}</td>
+                    <td>${claim.claimDate || 'N/A'}</td>
+                    <td>${formatCurrency(claim.requestedAmount)}</td>
+                    <td>${formatCurrency(claim.approvedAmount || 0)}</td>
+                    <td>${getStatusBadgeHtml(claim.status)}</td>
+                `;
+            });
+        }
+
+        async function renderHrOrganizationsSection() {
+            const tableBody = document.getElementById('hrOrganizationsTableBody');
+            tableBody.innerHTML = '';
+
+            if (hrOrganizationsData.length === 0) {
+                const row = tableBody.insertRow();
+                row.innerHTML = `<td colspan="4" class="text-center text-muted py-4">No organizations found.</td>`;
+                return;
             }
-        };
 
-        // Initialize the dashboard when the page loads
-        window.onload = () => {
-            // Set up event listeners for navigation buttons
-            document.getElementById('nav-dashboard').addEventListener('click', () => setActiveSection('dashboard'));
-            document.getElementById('nav-employees').addEventListener('click', () => setActiveSection('employees'));
-            document.getElementById('nav-reports').addEventListener('click', () => setActiveSection('reports'));
-            document.getElementById('nav-claims').addEventListener('click', () => setActiveSection('claims'));
-            document.getElementById('nav-organization').addEventListener('click', () => setActiveSection('organization'));
+            hrOrganizationsData.forEach(org => {
+                const row = tableBody.insertRow();
+                row.innerHTML = `
+                    <td>${org.id}</td>
+                    <td><a href="#" class="text-primary fw-medium">${org.name || 'N/A'}</a></td>
+                    <td>${org.contactPerson || 'N/A'}</td>
+                    <td>${org.contactEmail || 'N/A'}</td>
+                `;
+            });
+        }
 
-            // Render the initial dashboard view
-            setActiveSection('dashboard');
-        };
+        async function renderHrEnrollmentsSection(filterStatus = 'All') {
+            const tableBody = document.getElementById('hrEnrollmentsTableBody');
+            tableBody.innerHTML = '';
+
+            const filteredEnrollments = filterStatus === 'All'
+                ? hrEnrollmentsData
+                : hrEnrollmentsData.filter(enrollment => enrollment.status?.toUpperCase() === filterStatus?.toUpperCase());
+
+            if (filteredEnrollments.length === 0) {
+                const row = tableBody.insertRow();
+                row.innerHTML = `<td colspan="6" class="text-center text-muted py-4">No enrollments found for this status.</td>`;
+                return;
+            }
+
+            filteredEnrollments.forEach(enrollment => {
+                const row = tableBody.insertRow();
+                row.innerHTML = `
+                    <td>${enrollment.id}</td>
+                    <td>${enrollment.employeeName || 'N/A'}</td>
+                    <td>${enrollment.policyName || 'N/A'}</td>
+                    <td>${enrollment.policyType || 'N/A'}</td>
+                    <td>${enrollment.enrollmentDate || 'N/A'}</td>
+                    <td>${getStatusBadgeHtml(enrollment.status)}</td>
+                `;
+            });
+        }
+
+        function renderRecentEnrollmentsTable() {
+            const tableBody = document.getElementById('hrRecentEnrollmentsTableBody');
+            tableBody.innerHTML = ''; // Clear previous data
+
+            const recentEnrollments = [...hrEnrollmentsData]
+                .sort((a, b) => new Date(b.enrollmentDate) - new Date(a.enrollmentDate)) // Most recent first
+                .slice(0, 5);
+
+            if (recentEnrollments.length === 0) {
+                const row = tableBody.insertRow();
+                row.innerHTML = `<td colspan="5" class="text-center text-muted py-4">No recent enrollments.</td>`;
+                return;
+            }
+
+            recentEnrollments.forEach(enrollment => {
+                const row = tableBody.insertRow();
+                row.innerHTML = `
+                    <td>${enrollment.id}</td>
+                    <td>${enrollment.employeeName || 'N/A'}</td>
+                    <td>${enrollment.policyName || 'N/A'}</td>
+                    <td>${enrollment.enrollmentDate || 'N/A'}</td>
+                    <td>${getStatusBadgeHtml(enrollment.status)}</td>
+                `;
+            });
+        }
+
+
+        // --- Chart Rendering Logic (HR Specific) ---
+
+        // Employee Enrollment Status (shared between Admin and HR, now HR-specific)
+        async function initializeEmployeeEnrollmentChart() {
+            const ctx = document.getElementById('employeeEnrollmentChart').getContext('2d');
+            if (employeeEnrollmentChartInstance) { employeeEnrollmentChartInstance.destroy(); }
+
+            // This data comes from /api/dashboard/employee-enrollment-chart-data
+            // which the fetchHrDashboardData already calls.
+            const totalEmployees = hrEmployeesData.length;
+            const activeEnrollments = hrEnrollmentsData.filter(e => e.status?.toUpperCase() === 'ACTIVE').length;
+            const notEnrolledCount = totalEmployees - activeEnrollments; // Simplified logic, assuming active means enrolled
+
+            employeeEnrollmentChartInstance = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: ['Enrolled (Active Policy)', 'Not Enrolled / Inactive Policy'],
+                    datasets: [{
+                        data: [activeEnrollments, notEnrolledCount],
+                        backgroundColor: ['#4CAF50', '#FFC107'], // Green, Amber
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.parsed + ' employees';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                },
+            });
+        }
+
+        // Claims Status Distribution (re-used for HR from Admin)
+        function renderClaimsStatusChart() {
+            if (claimsStatusChartInstance) claimsStatusChartInstance.destroy();
+
+            const ctx = document.getElementById('claimsStatusChart').getContext('2d');
+            const data = [
+                { name: 'Approved', value: hrClaimsData.filter(c => c.status?.toUpperCase() === 'APPROVED').length, color: '#34D399' },
+                { name: 'Submitted', value: hrClaimsData.filter(c => c.status?.toUpperCase() === 'SUBMITTED').length, color: '#60A5FA' },
+                { name: 'Rejected', value: hrClaimsData.filter(c => c.status?.toUpperCase() === 'REJECTED').length, color: '#F87171' },
+            ];
+
+            claimsStatusChartInstance = new Chart(ctx, {
+                type: 'pie',
+                data: {
+                    labels: data.map(d => d.name),
+                    datasets: [{
+                        data: data.map(d => d.value),
+                        backgroundColor: data.map(d => d.color),
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'top',
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.parsed !== null) {
+                                        label += context.parsed + ' claims';
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    }
+                },
+            });
+        }
+
+
+        // --- Section Switching Logic ---
+        async function showSection(sectionId) {
+            showLoadingSpinner();
+
+            const sections = document.querySelectorAll('.dashboard-section');
+            sections.forEach(section => {
+                section.style.display = 'none';
+            });
+            document.getElementById(sectionId).style.display = 'block';
+
+            // Update active state of nav buttons
+            const navButtons = document.querySelectorAll('#hr-dashboard-nav-buttons .btn-group button');
+            navButtons.forEach(button => {
+                button.classList.remove('active');
+            });
+            document.querySelector(`#hr-dashboard-nav-buttons button[data-section="${sectionId.replace('-section', '')}"]`).classList.add('active');
+
+            // Render content based on the selected section
+            switch (sectionId) {
+                case 'hr-overview-section':
+                    await renderHrOverviewSection();
+                    break;
+                case 'hr-employees-section':
+                    await renderHrEmployeesSection();
+                    break;
+                case 'hr-claims-section':
+                    await renderHrClaimsSection();
+                    break;
+                case 'hr-organizations-section':
+                    await renderHrOrganizationsSection();
+                    break;
+                case 'hr-enrollments-section':
+                    await renderHrEnrollmentsSection();
+                    break;
+            }
+            hideLoadingSpinner();
+        }
+
+        // --- Event Listeners and Initial Load ---
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Attach event listeners for HR Dashboard Navigation Buttons
+            document.querySelectorAll('#hr-dashboard-nav-buttons .btn-group button').forEach(button => {
+                button.addEventListener('click', function() {
+                    const section = this.dataset.section;
+                    showSection(`${section}-section`);
+                });
+            });
+
+            // Claims Filter Logic for HR Claims section
+            document.querySelectorAll('#hr-claims-section .btn-group button').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    document.querySelectorAll('#hr-claims-section .btn-group button').forEach(btn => btn.classList.remove('active'));
+                    event.target.classList.add('active');
+                    const filterStatus = event.target.dataset.filter;
+                    renderHrClaimsSection(filterStatus);
+                });
+            });
+
+            // Enrollments Filter Logic for HR Enrollments section
+            document.querySelectorAll('#hr-enrollments-section .btn-group button').forEach(button => {
+                button.addEventListener('click', (event) => {
+                    document.querySelectorAll('#hr-enrollments-section .btn-group button').forEach(btn => btn.classList.remove('active'));
+                    event.target.classList.add('active');
+                    const filterStatus = event.target.dataset.filter;
+                    renderHrEnrollmentsSection(filterStatus);
+                });
+            });
+
+            // Initial fetch of all HR dashboard data
+            await fetchHrDashboardData();
+            // Show the default HR overview section
+            await showSection('hr-overview-section');
+        });
+
     </script>
-</body>
-
+}
