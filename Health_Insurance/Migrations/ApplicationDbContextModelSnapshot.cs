@@ -276,7 +276,7 @@ namespace Health_Insurance.Migrations
             modelBuilder.Entity("Health_Insurance.Models.Employee", b =>
                 {
                     b.HasOne("Health_Insurance.Models.Organization", "Organization")
-                        .WithMany()
+                        .WithMany("Employees")
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -301,6 +301,11 @@ namespace Health_Insurance.Migrations
                     b.Navigation("Employee");
 
                     b.Navigation("Policy");
+                });
+
+            modelBuilder.Entity("Health_Insurance.Models.Organization", b =>
+                {
+                    b.Navigation("Employees");
                 });
 #pragma warning restore 612, 618
         }

@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace Health_Insurance.Migrations
 {
     /// <inheritdoc />
-    public partial class added_seed_data_admin_ : Migration
+    public partial class addedconstarints : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)

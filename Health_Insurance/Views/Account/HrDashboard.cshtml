@@ -1,0 +1,541 @@
+﻿
+    <script src="https://cdn.jsdelivr.net/npm/lucide@latest"></script>
+    <style>
+        /* Custom styles for Chart.js canvases to be responsive */
+        canvas {
+            max-width: 100%;
+            height: auto; /* Maintain aspect ratio */
+        }
+
+        /* Ensure font-inter is applied */
+        body {
+            font-family: 'Inter', sans-serif;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+    </style>
+</head>
+<body class="flex flex-col h-screen bg-gray-100 font-inter antialiased">
+
+    <!-- Top Navigation Bar -->
+    
+    <!-- Main Content Area -->
+    <main id="main-content" class="flex-1 overflow-auto p-4 bg-gray-100"></main>
+
+    <script>
+        // Store chart instances globally to destroy them when switching sections
+        let currentCharts = {};
+
+        // Utility to generate mock employee data
+   
+
+        // Utility to generate mock claim data
+        const generateClaimData = (num) => {
+            const claimTypes = ['Medical', 'Dental', 'Vision', 'Life', 'Disability'];
+            const statuses = ['Pending', 'Approved', 'Denied'];
+            const claims = [];
+
+            for (let i = 1; i <= num; i++) {
+                claims.push({
+                    id: `C${1000 + i}`,
+                    employee: `Employee ${Math.floor(Math.random() * 50) + 1}`,
+                    type: claimTypes[Math.floor(Math.random() * claimTypes.length)],
+                    amount: (Math.random() * 1000 + 50).toFixed(2),
+                    date: `202${Math.floor(Math.random() * 5)}-${Math.floor(Math.random() * 11) + 1}-${Math.floor(Math.random() * 28) + 1}`,
+                    status: statuses[Math.floor(Math.random() * statuses.length)],
+                });
+            }
+            return claims;
+        };
+
+        // Mock data generated once on page load
+        const allEmployees = generateEmployeeData(50);
+        const allClaims = generateClaimData(30);
+
+        // Function to destroy all active Chart.js instances
+        const destroyCharts = () => {
+            for (const chartId in currentCharts) {
+                if (currentCharts[chartId]) {
+                    currentCharts[chartId].destroy();
+                    delete currentCharts[chartId];
+                }
+            }
+        };
+
+        // Initializes Chart.js charts for the Dashboard Overview section
+        const initDashboardCharts = (employees, claims) => {
+            destroyCharts(); // Clear existing charts
+
+            // Employees by Department Bar Chart
+            const employeesByDepartment = employees.reduce((acc, emp) => {
+                acc[emp.department] = (acc[emp.department] || 0) + 1;
+                return acc;
+            }, {});
+            const departmentChartData = Object.keys(employeesByDepartment).map(dept => ({
+                name: dept,
+                employees: employeesByDepartment[dept]
+            }));
+
+            const ctxDept = document.getElementById('employeesByDepartmentChart');
+            if (ctxDept) {
+                currentCharts.employeesByDepartmentChart = new Chart(ctxDept, {
+                    type: 'bar',
+                    data: {
+                        labels: departmentChartData.map(d => d.name),
+                        datasets: [{
+                            label: 'Number of Employees',
+                            data: departmentChartData.map(d => d.employees),
+                            backgroundColor: '#8884d8',
+                            borderRadius: 10,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            }
+
+            // Claims Status Distribution Pie Chart
+            const claimsByStatus = claims.reduce((acc, claim) => {
+                acc[claim.status] = (acc[claim.status] || 0) + 1;
+                return acc;
+            }, {});
+            const claimsStatusChartData = Object.keys(claimsByStatus).map(status => ({
+                name: status,
+                value: claimsByStatus[status]
+            }));
+            const PIE_COLORS = ['#0088FE', '#00C49F', '#FFBB28']; // Approved, Pending, Denied
+
+            const ctxClaimsStatus = document.getElementById('claimsStatusDistributionChart');
+            if (ctxClaimsStatus) {
+                currentCharts.claimsStatusDistributionChart = new Chart(ctxClaimsStatus, {
+                    type: 'pie',
+                    data: {
+                        labels: claimsStatusChartData.map(d => d.name),
+                        datasets: [{
+                            data: claimsStatusChartData.map(d => d.value),
+                            backgroundColor: claimsStatusChartData.map((d, i) => PIE_COLORS[i % PIE_COLORS.length]),
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                    }
+                });
+            }
+
+            // Claims Trend Over Time Line Chart (using mock data from the React version)
+            const claimsOverTimeData = [
+                { month: 'Jan', claims: 40 }, { month: 'Feb', claims: 30 }, { month: 'Mar', claims: 50 },
+                { month: 'Apr', claims: 45 }, { month: 'May', claims: 60 }, { month: 'Jun', claims: 55 },
+                { month: 'Jul', claims: 70 }, { month: 'Aug', claims: 65 }, { month: 'Sep', claims: 80 },
+                { month: 'Oct', claims: 75 }, { month: 'Nov', claims: 90 }, { month: 'Dec', claims: 85 }
+            ];
+
+            const ctxClaimsTrend = document.getElementById('claimsTrendOverTimeChart');
+            if (ctxClaimsTrend) {
+                currentCharts.claimsTrendOverTimeChart = new Chart(ctxClaimsTrend, {
+                    type: 'line',
+                    data: {
+                        labels: claimsOverTimeData.map(d => d.month),
+                        datasets: [{
+                            label: 'Number of Claims',
+                            data: claimsOverTimeData.map(d => d.claims),
+                            borderColor: '#82ca9d',
+                            tension: 0.3,
+                            fill: false,
+                            pointRadius: 6,
+                            pointHoverRadius: 8
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            }
+        };
+
+        // Initializes Chart.js charts for the Claims Overview section
+        const initClaimsCharts = (claims) => {
+            destroyCharts(); // Clear existing charts
+
+            // Claims by Status Pie Chart (re-used logic from Dashboard but specific to this section)
+            const claimsByStatus = claims.reduce((acc, claim) => {
+                acc[claim.status] = (acc[claim.status] || 0) + 1;
+                return acc;
+            }, {});
+            const claimsStatusChartData = Object.keys(claimsByStatus).map(status => ({
+                name: status,
+                value: claimsByStatus[status]
+            }));
+            const PIE_COLORS = ['#0088FE', '#00C49F', '#FFBB28']; // Approved, Pending, Denied
+
+            const ctxClaimsStatus = document.getElementById('claimsOverviewStatusChart');
+            if (ctxClaimsStatus) {
+                currentCharts.claimsOverviewStatusChart = new Chart(ctxClaimsStatus, {
+                    type: 'pie',
+                    data: {
+                        labels: claimsStatusChartData.map(d => d.name),
+                        datasets: [{
+                            data: claimsStatusChartData.map(d => d.value),
+                            backgroundColor: claimsStatusChartData.map((d, i) => PIE_COLORS[i % PIE_COLORS.length]),
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                    }
+                });
+            }
+
+            // Claims by Type Bar Chart
+            const claimsByType = claims.reduce((acc, claim) => {
+                acc[claim.type] = (acc[claim.type] || 0) + 1;
+                return acc;
+            }, {});
+            const claimsTypeChartData = Object.keys(claimsByType).map(type => ({
+                name: type,
+                claims: claimsByType[type]
+            }));
+
+            const ctxClaimsType = document.getElementById('claimsOverviewTypeChart');
+            if (ctxClaimsType) {
+                currentCharts.claimsOverviewTypeChart = new Chart(ctxClaimsType, {
+                    type: 'bar',
+                    data: {
+                        labels: claimsTypeChartData.map(d => d.name),
+                        datasets: [{
+                            label: 'Number of Claims',
+                            data: claimsTypeChartData.map(d => d.claims),
+                            backgroundColor: '#82ca9d',
+                            borderRadius: 10,
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            y: { beginAtZero: true }
+                        }
+                    }
+                });
+            }
+        };
+
+
+        // Renders the Dashboard Overview content
+        const renderDashboardOverview = (employees, claims) => {
+            const totalEmployees = employees.length;
+            const activeEmployees = employees.filter(emp => emp.status === 'Active').length;
+            const pendingClaims = claims.filter(claim => claim.status === 'Pending').length;
+            const totalClaims = claims.length;
+
+            return `
+                <div class="p-6 bg-gray-50 min-h-screen rounded-lg shadow-inner">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Dashboard Overview</h2>
+
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                        <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between transition duration-300 ease-in-out hover:scale-105 transform">
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">Total Employees</p>
+                                <p class="text-4xl font-semibold text-indigo-600">${totalEmployees}</p>
+                            </div>
+                            <!-- Lucide Users Icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-users text-indigo-400 opacity-70"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between transition duration-300 ease-in-out hover:scale-105 transform">
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">Active Employees</p>
+                                <p class="text-4xl font-semibold text-green-600">${activeEmployees}</p>
+                            </div>
+                            <!-- Lucide Briefcase Icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-briefcase text-green-400 opacity-70"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><path d="M12 12h.01"/></svg>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between transition duration-300 ease-in-out hover:scale-105 transform">
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">Pending Claims</p>
+                                <p class="text-4xl font-semibold text-yellow-600">${pendingClaims}</p>
+                            </div>
+                            <!-- Lucide ClipboardCheck Icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-clipboard-check text-yellow-400 opacity-70"><rect width="8" height="4" x="8" y="2" rx="1" ry="1"/><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><path d="m9 14 2 2 4-4"/></svg>
+                        </div>
+                        <div class="bg-white p-6 rounded-xl shadow-md flex items-center justify-between transition duration-300 ease-in-out hover:scale-105 transform">
+                            <div>
+                                <p class="text-sm font-medium text-gray-500">Total Claims</p>
+                                <p class="text-4xl font-semibold text-purple-600">${totalClaims}</p>
+                            </div>
+                            <!-- Lucide FileText Icon -->
+                            <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-file-text text-purple-400 opacity-70"><path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/></svg>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-md">
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">Employees by Department</h3>
+                            <div class="relative h-72">
+                                <canvas id="employeesByDepartmentChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-xl shadow-md">
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">Claims Status Distribution</h3>
+                            <div class="relative h-72">
+                                <canvas id="claimsStatusDistributionChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-xl shadow-md lg:col-span-2">
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">Claims Trend Over Time</h3>
+                            <div class="relative h-72">
+                                <canvas id="claimsTrendOverTimeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        // Renders the Employees Management content
+        const renderEmployeesManagement = (employees) => {
+            let employeeRows = employees.map(employee => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${employee.id}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">${employee.name}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${employee.email}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${employee.department}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${employee.title}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            employee.status === 'Active' ? 'bg-green-100 text-green-800' :
+                            employee.status === 'On Leave' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                        }">
+                            ${employee.status}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${employee.hireDate}</td>
+                </tr>
+            `).join('');
+
+            return `
+                <div class="p-6 bg-gray-50 min-h-screen rounded-lg shadow-inner">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Employees Management</h2>
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden">
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">ID</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Name</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Email</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Department</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Title</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Hire Date</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                ${employeeRows}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        };
+
+        // Renders the Reports Generation content
+        const renderReportsGeneration = () => {
+            const reportTypes = [
+                { name: "Employee Headcount Report", description: "Overview of total employees and departmental distribution." },
+                { name: "Claims Summary Report", description: "Summary of all insurance claims by type and status." },
+                { name: "Payroll Analysis Report", description: "Detailed breakdown of payroll expenses." },
+                { name: "Leave Tracking Report", description: "Insights into employee leave requests and approvals." },
+                { name: "Performance Review Report", description: "Aggregated data on employee performance." },
+            ];
+
+            let reportCards = reportTypes.map((report, index) => `
+                <div class="bg-white p-6 rounded-xl shadow-md transition duration-300 ease-in-out hover:shadow-lg">
+                    <h3 class="text-xl font-semibold text-gray-800 mb-2">${report.name}</h3>
+                    <p class="text-gray-600 mb-4">${report.description}</p>
+                    <button class="bg-blue-500 text-white px-4 py-2 rounded-lg hover:bg-blue-600 transition-colors duration-200 shadow-sm">
+                        Generate Report
+                    </button>
+                </div>
+            `).join('');
+
+            return `
+                <div class="p-6 bg-gray-50 min-h-screen rounded-lg shadow-inner">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Reports Generation</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        ${reportCards}
+                    </div>
+                </div>
+            `;
+        };
+
+        // Renders the Claims Overview content
+        const renderClaimsOverview = (claims) => {
+            let claimRows = claims.slice(0, 10).map(claim => `
+                <tr class="hover:bg-gray-50">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${claim.id}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-900">${claim.employee}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${claim.type}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">$${claim.amount}</td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-gray-500">${claim.date}</td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
+                            claim.status === 'Approved' ? 'bg-green-100 text-green-800' :
+                            claim.status === 'Pending' ? 'bg-yellow-100 text-yellow-800' :
+                            'bg-red-100 text-red-800'
+                        }">
+                            ${claim.status}
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+
+            return `
+                <div class="p-6 bg-gray-50 min-h-screen rounded-lg shadow-inner">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Claims Overview</h2>
+                    <div class="bg-white rounded-xl shadow-md overflow-hidden mb-8">
+                        <h3 class="text-xl font-semibold text-gray-800 p-6 border-b">Recent Claims</h3>
+                        <table class="min-w-full divide-y divide-gray-200">
+                            <thead class="bg-gray-100">
+                                <tr>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Claim ID</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Employee</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Type</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Amount</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Date</th>
+                                    <th scope="col" class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody class="bg-white divide-y divide-gray-200">
+                                ${claimRows}
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <div class="bg-white p-6 rounded-xl shadow-md">
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">Claims by Status</h3>
+                            <div class="relative h-72">
+                                <canvas id="claimsOverviewStatusChart"></canvas>
+                            </div>
+                        </div>
+
+                        <div class="bg-white p-6 rounded-xl shadow-md">
+                            <h3 class="text-lg font-semibold text-gray-700 mb-4">Claims by Type</h3>
+                            <div class="relative h-72">
+                                <canvas id="claimsOverviewTypeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        };
+
+        // Renders the Organization Management content
+        const renderOrganizationManagement = () => {
+            return `
+                <div class="p-6 bg-gray-50 min-h-screen rounded-lg shadow-inner">
+                    <h2 class="text-3xl font-bold text-gray-800 mb-6">Organization Management</h2>
+                    <div class="bg-white p-8 rounded-xl shadow-md text-center text-gray-700">
+                        <!-- Lucide Briefcase Icon -->
+                        <svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="lucide lucide-briefcase mx-auto mb-4 text-blue-500 opacity-70"><rect width="20" height="14" x="2" y="7" rx="2" ry="2"/><path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/><path d="M12 12h.01"/></svg>
+                        <p class="text-lg mb-4">This section will allow you to manage your organizational structure, departments, and roles.</p>
+                        <p class="text-md text-gray-600">Features like department hierarchy, team assignments, and role-based access control can be implemented here.</p>
+                        <button class="mt-6 bg-indigo-500 text-white px-6 py-3 rounded-lg hover:bg-indigo-600 transition-colors duration-200 shadow-md">
+                            Manage Structure
+                        </button>
+                    </div>
+                </div>
+            `;
+        };
+
+        // Function to set the active section and render its content
+        const setActiveSection = (sectionName) => {
+            const mainContent = document.getElementById('main-content');
+            let contentHtml = '';
+
+            destroyCharts(); // Destroy existing charts before rendering new content
+
+            switch (sectionName) {
+                case 'dashboard':
+                    contentHtml = renderDashboardOverview(allEmployees, allClaims);
+                    break;
+                case 'employees':
+                    contentHtml = renderEmployeesManagement(allEmployees);
+                    break;
+                case 'reports':
+                    contentHtml = renderReportsGeneration();
+                    break;
+                case 'claims':
+                    contentHtml = renderClaimsOverview(allClaims);
+                    break;
+                case 'organization':
+                    contentHtml = renderOrganizationManagement();
+                    break;
+                default:
+                    contentHtml = renderDashboardOverview(allEmployees, allClaims);
+            }
+
+            mainContent.innerHTML = contentHtml;
+
+            // After rendering the HTML, initialize charts if the section contains them
+            if (sectionName === 'dashboard') {
+                initDashboardCharts(allEmployees, allClaims);
+            } else if (sectionName === 'claims') {
+                initClaimsCharts(allClaims);
+            }
+
+            // Update active navigation button styling
+            document.querySelectorAll('nav button').forEach(button => {
+                button.classList.remove('bg-indigo-600', 'text-white', 'shadow-lg');
+                button.classList.add('text-indigo-200', 'hover:bg-indigo-700', 'hover:text-white');
+            });
+            const activeButton = document.getElementById(`nav-${sectionName}`);
+            if (activeButton) {
+                activeButton.classList.remove('text-indigo-200', 'hover:bg-indigo-700', 'hover:text-white');
+                activeButton.classList.add('bg-indigo-600', 'text-white', 'shadow-lg');
+            }
+
+            // Manually refresh lucide icons if they don't render automatically on dynamic content injection
+            if (typeof lucide !== 'undefined' && lucide.createIcons) {
+                lucide.createIcons();
+            }
+        };
+
+        // Initialize the dashboard when the page loads
+        window.onload = () => {
+            // Set up event listeners for navigation buttons
+            document.getElementById('nav-dashboard').addEventListener('click', () => setActiveSection('dashboard'));
+            document.getElementById('nav-employees').addEventListener('click', () => setActiveSection('employees'));
+            document.getElementById('nav-reports').addEventListener('click', () => setActiveSection('reports'));
+            document.getElementById('nav-claims').addEventListener('click', () => setActiveSection('claims'));
+            document.getElementById('nav-organization').addEventListener('click', () => setActiveSection('organization'));
+
+            // Render the initial dashboard view
+            setActiveSection('dashboard');
+        };
+    </script>
+</body>
+

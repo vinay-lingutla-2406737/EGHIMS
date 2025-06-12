@@ -5,6 +5,7 @@ using Health_Insurance.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using System.Collections.Generic;
@@ -163,7 +164,7 @@ namespace Health_Insurance.Controllers
 
 
         
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,HR")]
         [HttpGet("/api/admin/policies")]
         public async Task<JsonResult> GetPoliciesApi() // Marked as async Task<JsonResult>
         {
@@ -190,7 +191,7 @@ namespace Health_Insurance.Controllers
 
  // API Endpoint for Employees Data - Fetches from DB based on provided model
         [HttpGet("/api/admin/employees")]
-        [Authorize(Roles = "Admin")]
+        [Authorize(Roles = "Admin,HR")]
         public async Task<JsonResult> GetEmployeesApi()
         {
             // Include Organization for potentially displaying organization name
@@ -312,6 +313,44 @@ namespace Health_Insurance.Controllers
             }).ToList();
 
             return Json(organizationsForFrontend);
+        }
+
+
+        // Inside HrManagerController.cs (or a new API controller)
+        // Make sure you have _context (ApplicationDbContext) and _userManager (UserManager<ApplicationUser>) injected
+
+        // Inside HrManagerController.cs (or a new API controller)
+        // Make sure you have _context (ApplicationDbContext) and _userManager (UserManager<ApplicationUser>) injected
+
+        [HttpGet("/api/admin/employee-enrollment-chart-data")]
+        [Authorize(Roles = "Admin,HR")]// Or [Authorize(Roles = "Administrator,HRManager")] depending on who sees the dashboard
+        public async Task<IActionResult> GetEmployeeEnrollmentChartData()
+        {
+            int enrolledCount = 0;
+            int notEnrolledCount = 0;
+
+            // Get all Employee entities from your database
+            // Assuming your ApplicationDbContext has a DbSet<Employee> named 'Employees'
+            var allEmployees = await _context.Employees.ToListAsync();
+
+            foreach (var employee in allEmployees)
+            {
+                // Check if this Employee has ANY active enrollment in the Enrollment table
+                // We now check the 'Status' field for "ACTIVE" (case-sensitive)
+                var hasActiveEnrollment = await _context.Enrollments
+                                                        .AnyAsync(e => e.EmployeeId == employee.EmployeeId && e.Status == "ACTIVE");
+
+                if (hasActiveEnrollment)
+                {
+                    enrolledCount++;
+                }
+                else
+                {
+                    notEnrolledCount++;
+                }
+            }
+
+            return Json(new { enrolled = enrolledCount, notEnrolled = notEnrolledCount });
         }
     }
 }

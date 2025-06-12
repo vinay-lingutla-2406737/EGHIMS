@@ -106,6 +106,7 @@ namespace Health_Insurance.Controllers
         // GET: /Enrollment/EnrolledPolicies/5
         // Accessible to all authenticated users.
         // An Admin can view any employee's enrollments. An Employee can only view their own.
+        //[Authorize(Roles ="Employee,Admin")]
         public async Task<IActionResult> EnrolledPolicies(int employeeId)
         {
             // Enforce that an Employee can only view their own enrollments

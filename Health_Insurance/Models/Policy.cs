@@ -16,10 +16,12 @@ namespace Health_Insurance.Models // Ensure this namespace is correct based on y
 
         [Required]
         [Column(TypeName = "decimal(10, 2)")] // Specify SQL Server data type for precision
+        [Range(0.01, double.MaxValue, ErrorMessage = "Premium Amount must be a positive number.")] // ADDED VALIDATION
         public decimal CoverageAmount { get; set; }
 
         [Required]
         [Column(TypeName = "decimal(10, 2)")] // Specify SQL Server data type for precision
+        [Range(0.01, double.MaxValue, ErrorMessage = "Coverage Amount must be a positive number.")] // ADDED VALIDATION
         public decimal PremiumAmount { get; set; }
 
         // Policy Type as described in the document (ENUM in MySQL, using string with validation here)

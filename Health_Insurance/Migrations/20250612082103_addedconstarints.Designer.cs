@@ -12,8 +12,8 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace Health_Insurance.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    [Migration("20250610041258_added_seed_data_admin_")]
-    partial class added_seed_data_admin_
+    [Migration("20250612082103_addedconstarints")]
+    partial class addedconstarints
     {
         /// <inheritdoc />
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -279,7 +279,7 @@ namespace Health_Insurance.Migrations
             modelBuilder.Entity("Health_Insurance.Models.Employee", b =>
                 {
                     b.HasOne("Health_Insurance.Models.Organization", "Organization")
-                        .WithMany()
+                        .WithMany("Employees")
                         .HasForeignKey("OrganizationId")
                         .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
@@ -304,6 +304,11 @@ namespace Health_Insurance.Migrations
                     b.Navigation("Employee");
 
                     b.Navigation("Policy");
+                });
+
+            modelBuilder.Entity("Health_Insurance.Models.Organization", b =>
+                {
+                    b.Navigation("Employees");
                 });
 #pragma warning restore 612, 618
         }
