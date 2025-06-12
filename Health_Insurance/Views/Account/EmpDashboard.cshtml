@@ -135,12 +135,15 @@
 </style>
 
 <div class="container-fluid py-4">
-    <div id="loading-spinner" class="d-flex justify-content-center align-items-center" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.8); z-index: 1000;">
-        <div class="spinner-border text-primary" role="status">
+    <!-- TEMPORARY DEBUG STYLES FOR SPINNER: MAKE IT OBVIOUS -->
+    <div id="loading-spinner" class="d-none justify-content-center align-items-center" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,0,0,0.5); /* RED OVERLAY */ z-index: 9999; /* HIGHER Z-INDEX */ border: 5px solid yellow; /* BORDER */">
+        <div class="spinner-border text-primary" role="status" style="width: 5rem; height: 5rem;">
+            <!-- LARGER SPINNER -->
             <span class="visually-hidden">Loading...</span>
         </div>
-        <span class="ms-3">Loading dashboard data...</span>
+        <span class="ms-3 text-white" style="font-size: 2rem; text-shadow: 2px 2px 4px black;">Loading dashboard data...</span> <!-- LARGER TEXT -->
     </div>
+    <!-- END TEMPORARY DEBUG STYLES -->
 
     <h1 class="h2 fw-bold text-gray-800 mb-4">Employee Dashboard</h1>
 
@@ -428,14 +431,14 @@
         function displayMessage(elementId, message, type) {
             console.log(`Message: Displaying ${type} message for ${elementId}: ${message}`);
             const msgElement = document.getElementById(elementId);
-            if (msgElement) { // Check if element exists before manipulating
+            if (msgElement) {
                 msgElement.textContent = message;
                 msgElement.className = `alert-message alert-${type}`;
                 msgElement.style.display = 'block';
                 setTimeout(() => {
                     msgElement.style.display = 'none';
                     console.log(`Message: Hiding message for ${elementId}.`);
-                }, 5000); // Hide after 5 seconds
+                }, 5000);
             } else {
                 console.warn(`displayMessage: Element with ID '${elementId}' not found.`);
             }
@@ -511,26 +514,23 @@
         async function renderOverviewSection() {
             console.log("Render: Entering renderOverviewSection.");
             try {
-                // Fetch all data needed for overview simultaneously
                 const [enrolledPolicies, claims, availablePolicies] = await Promise.all([
                     fetchEnrolledPolicies(),
                     fetchClaims(),
                     fetchAvailablePolicies()
                 ]);
 
-                enrolledPoliciesData = enrolledPolicies; // Update global variable
-                claimsData = claims; // Update global variable
-                availablePoliciesData = availablePolicies; // Update global variable
+                enrolledPoliciesData = enrolledPolicies;
+                claimsData = claims;
+                availablePoliciesData = availablePolicies;
 
                 console.log("Render: Overview data fetched. Enrolled:", enrolledPoliciesData.length, "Claims:", claimsData.length, "Available:", availablePoliciesData.length);
 
-                // Render KPIs
                 document.getElementById('kpi-total-enrolled-policies').textContent = enrolledPoliciesData.length;
                 document.getElementById('kpi-total-claims-submitted').textContent = claimsData.length;
                 document.getElementById('kpi-total-available-policies').textContent = availablePoliciesData.length;
                 console.log("Render: KPIs updated.");
 
-                // Render Charts
                 renderEnrolledPoliciesByTypeChart();
                 renderClaimsStatusChart();
                 renderEnrollmentTrendChart();
@@ -550,7 +550,7 @@
                 }
 
                 const tableBody = document.getElementById('enrolledPoliciesTableBody');
-                tableBody.innerHTML = ''; // Clear previous data
+                tableBody.innerHTML = '';
 
                 if (enrolledPoliciesData.length === 0) {
                     const row = tableBody.insertRow();
@@ -754,7 +754,7 @@
                 '#78909C'  // Gray
             ];
 
-            enrolledPoliciesByTypeChartInstance = new Chart(chartCtx, { // Use chartCtx here
+            enrolledPoliciesByTypeChartInstance = new Chart(chartCtx, {
                 type: 'pie',
                 data: {
                     labels: labels,
@@ -816,7 +816,7 @@
                 '#EF5350'  // Rejected - Red
             ];
 
-            claimsStatusChartInstance = new Chart(chartCtx, { // Use chartCtx here
+            claimsStatusChartInstance = new Chart(chartCtx, {
                 type: 'doughnut',
                 data: {
                     labels: labels,
@@ -864,12 +864,11 @@
             }
             const chartCtx = ctx.getContext('2d');
 
-            // Group enrollments by month for the last 6 months
             const monthlyEnrollments = {};
             const today = new Date();
             const monthNames = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
-            for (let i = 5; i >= 0; i--) { // Go back 6 months (0 to 5)
+            for (let i = 5; i >= 0; i--) {
                 const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
                 const monthYear = `${monthNames[d.getMonth()]}-${d.getFullYear().toString().substr(-2)}`;
                 monthlyEnrollments[monthYear] = 0;
@@ -886,16 +885,16 @@
             const labels = Object.keys(monthlyEnrollments);
             const data = Object.values(monthlyEnrollments);
 
-            enrollmentTrendChartInstance = new Chart(chartCtx, { // Use chartCtx here
+            enrollmentTrendChartInstance = new Chart(chartCtx, {
                 type: 'line',
                 data: {
                     labels: labels,
                     datasets: [{
                         label: 'New Enrollments',
                         data: data,
-                        backgroundColor: 'rgba(13, 109, 253, 0.2)', // Primary color with transparency
-                        borderColor: '#0d6efd', // Primary color
-                        tension: 0.3, // Smooth lines
+                        backgroundColor: 'rgba(13, 109, 253, 0.2)',
+                        borderColor: '#0d6efd',
+                        tension: 0.3,
                         fill: true,
                         pointBackgroundColor: '#0d6efd',
                         pointBorderColor: '#fff',
@@ -910,7 +909,7 @@
                         y: {
                             beginAtZero: true,
                             ticks: {
-                                precision: 0 // Ensure integer ticks for counts
+                                precision: 0
                             },
                             title: {
                                 display: true,
@@ -926,7 +925,7 @@
                     },
                     plugins: {
                         legend: {
-                            display: false // Hide legend if only one dataset
+                            display: false
                         },
                         tooltip: {
                             mode: 'index',
@@ -944,12 +943,12 @@
         document.getElementById('enrollmentForm').addEventListener('submit', async (event) => {
             event.preventDefault();
             console.log("Form: Enrollment form submitted.");
-            showLoadingSpinner(); // Show spinner for form submission
+            showLoadingSpinner();
             const policyId = document.getElementById('enrollmentPolicySelect').value;
 
             if (!policyId) {
                 displayMessage('enrollmentMessage', 'Please select a policy.', 'danger');
-                hideLoadingSpinner(); // Hide spinner on client-side validation fail
+                hideLoadingSpinner();
                 return;
             }
 
@@ -966,7 +965,6 @@
                 if (response.ok) {
                     displayMessage('enrollmentMessage', result.message, 'success');
                     document.getElementById('enrollmentForm').reset();
-                    // Re-render overview and enrolled policies to reflect changes
                     await renderOverviewSection();
                     await renderEnrolledPoliciesSection();
                 } else {
@@ -976,20 +974,20 @@
                 console.error("Form Error: Error submitting enrollment:", error);
                 displayMessage('enrollmentMessage', 'An unexpected error occurred while submitting enrollment.', 'danger');
             } finally {
-                hideLoadingSpinner(); // Hide spinner after submission attempt
+                hideLoadingSpinner();
             }
         });
 
         document.getElementById('claimForm').addEventListener('submit', async (event) => {
             event.preventDefault();
             console.log("Form: Claim form submitted.");
-            showLoadingSpinner(); // Show spinner for form submission
+            showLoadingSpinner();
             const enrollmentId = document.getElementById('claimEnrollmentSelect').value;
             const claimAmount = parseFloat(document.getElementById('claimAmount').value);
 
             if (!enrollmentId || isNaN(claimAmount) || claimAmount <= 0) {
                 displayMessage('claimMessage', 'Please select an enrolled policy and enter a valid positive amount.', 'danger');
-                hideLoadingSpinner(); // Hide spinner on client-side validation fail
+                hideLoadingSpinner();
                 return;
             }
 
@@ -1006,7 +1004,6 @@
                 if (response.ok) {
                     displayMessage('claimMessage', result.message, 'success');
                     document.getElementById('claimForm').reset();
-                    // Re-render overview and my claims to reflect changes
                     await renderOverviewSection();
                     await renderMyClaimsSection();
                 } else {
@@ -1016,21 +1013,21 @@
                 console.error("Form Error: Error submitting claim:", error);
                 displayMessage('claimMessage', 'An unexpected error occurred while submitting claim.', 'danger');
             } finally {
-                hideLoadingSpinner(); // Hide spinner after submission attempt
+                hideLoadingSpinner();
             }
         });
 
         document.getElementById('policyDetailsForm').addEventListener('submit', async (event) => {
             event.preventDefault();
             console.log("Form: Policy details form submitted.");
-            showLoadingSpinner(); // Show spinner for form submission
+            showLoadingSpinner();
             const policyId = document.getElementById('policySelect').value;
             const policyDetailsResultDiv = document.getElementById('policyDetailsResult');
-            policyDetailsResultDiv.style.display = 'none'; // Hide previous results
+            policyDetailsResultDiv.style.display = 'none';
 
             if (!policyId) {
                 displayMessage('policyDetailsMessage', 'Please select a policy.', 'danger');
-                hideLoadingSpinner(); // Hide spinner on client-side validation fail
+                hideLoadingSpinner();
                 return;
             }
 
@@ -1052,7 +1049,7 @@
                 console.error("Form Error: Error fetching policy details:", error);
                 displayMessage('policyDetailsMessage', 'An unexpected error occurred while fetching policy details.', 'danger');
             } finally {
-                hideLoadingSpinner(); // Hide spinner after submission attempt
+                hideLoadingSpinner();
             }
         });
 
@@ -1061,7 +1058,7 @@
 
         async function showSection(sectionId) {
             console.log(`Section Switch: Attempting to show section: ${sectionId}`);
-            showLoadingSpinner(); // Show spinner at the very start of section switch
+            showLoadingSpinner();
 
             const sections = document.querySelectorAll('.dashboard-section');
             sections.forEach(section => {
@@ -1070,7 +1067,6 @@
             document.getElementById(sectionId).style.display = 'block';
             console.log(`Section Switch: Displayed section '${sectionId}'.`);
 
-            // Update active state of nav buttons
             const navButtons = document.querySelectorAll('.btn-group button');
             navButtons.forEach(button => {
                 button.classList.remove('active');
@@ -1111,10 +1107,8 @@
                 }
             } catch (error) {
                 console.error("Section Switch Error: Error during section rendering:", error);
-                // Individual render functions already call displayMessage for their errors.
             } finally {
-                // Ensure spinner is hidden regardless of success or caught error
-                hideLoadingSpinner();
+                hideLoadingSpinner(); // ALWAYS hide spinner after the section rendering attempt completes
                 console.log(`Section Switch: Completed rendering for ${sectionId}. Spinner hide attempt made.`);
             }
         }
@@ -1132,7 +1126,6 @@
             console.log("DOMContentLoaded: Employee ID is valid:", employeeId);
 
 
-            // Attach event listeners for navigation buttons
             document.querySelectorAll('.btn-group button[data-section]').forEach(button => {
                 button.addEventListener('click', function() {
                     const section = this.dataset.section;
@@ -1142,8 +1135,6 @@
             console.log("DOMContentLoaded: Navigation button event listeners attached.");
 
 
-            // Show the default section on load (now 'overview-section')
-            // This will call showLoadingSpinner() at its start and hide it in its finally block
             console.log("DOMContentLoaded: Calling initial showSection for 'overview-section'.");
             await showSection('overview-section');
             console.log("DOMContentLoaded: Initial showSection completed.");

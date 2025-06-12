@@ -1,6 +1,7 @@
 ﻿// Controllers/AccountController.cs
 using Health_Insurance.Data;
 using Health_Insurance.Models;
+using Health_Insurance.Models;
 using Health_Insurance.Services;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.Cookies;
@@ -8,11 +9,11 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using System; // Add this
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Security.Claims;
 using System.Threading.Tasks;
-using System; // Add this
-using Health_Insurance.Models;
 
 namespace Health_Insurance.Controllers
 {
@@ -35,7 +36,7 @@ namespace Health_Insurance.Controllers
             {
                 if (User.IsInRole("Admin"))
                 {
-                    return RedirectToAction("Index", "Employee"); // Admin goes to Employee management
+                    return RedirectToAction("EmployeeDashboard", "Account"); // Admin goes to Employee management
                 }
                 else if (User.IsInRole("Employee"))
                 {
@@ -158,16 +159,6 @@ namespace Health_Insurance.Controllers
             // If "Active Policies" simply means all policies that are currently defined in your database.
             viewModel.ActivePoliciesCount = await _context.Policies.CountAsync();
 
-            // Option 2: Count policies that have at least one 'ACTIVE' enrollment (more business logic-driven)
-            // This assumes your Enrollment model has a 'Status' property (e.g., "ACTIVE", "INACTIVE").
-            // This will give you the number of distinct policies that are currently being used by employees.
-            // Uncomment the following lines and comment out Option 1 if you prefer this.
-            // viewModel.ActivePoliciesCount = await _context.Enrollments
-            //                                                 .Where(e => e.Status == "ACTIVE") // Filter by active enrollments
-            //                                                 .Select(e => e.PolicyId)        // Select only the policy IDs
-            //                                                 .Distinct()                     // Get unique policy IDs
-            //                                                 .CountAsync();                  // Count them
-
             // --- End of ActivePoliciesCount options ---
 
 
@@ -226,9 +217,18 @@ namespace Health_Insurance.Controllers
         }
 
 
+        /// NEW: Employee Dashboard MVC Action
+        [Authorize(Roles = "Employee")] // Only Employees can access their dashboard
+        public IActionResult EmpDashboard()
+        {
+            ViewData["Title"] = "Employee Dashboard";
+            // Explicitly tells ASP.NET Core to look for Views/Account/EmpDashboard.cshtml
+            return View();
+        }
 
 
-        
+
+
         [Authorize(Roles = "Admin,HR")]
         [HttpGet("/api/admin/policies")]
         public async Task<JsonResult> GetPoliciesApi() // Marked as async Task<JsonResult>
@@ -535,6 +535,239 @@ namespace Health_Insurance.Controllers
 
             return Json(new { enrolled = enrolledCount, notEnrolled = notEnrolledCount });
         }
+
+
+
+
+
+        //Employee api's
+
+
+
+        // API: Get Enrolled Policies for a specific Employee
+        // URL: /api/employee/enrolled-policies/{employeeId}
+
+
+
+        [HttpGet("/api/employee/enrolled-policies/{employeeId}")]
+        [Authorize(Roles = "Employee")]
+        public async Task<JsonResult> GetEnrolledPoliciesApi(int employeeId)
+        {
+            // IMPORTANT: Authorize check if the logged-in employeeId matches the requested employeeId
+            var loggedInEmployeeIdClaim = User.FindFirst("EmployeeId");
+            if (loggedInEmployeeIdClaim == null || !int.TryParse(loggedInEmployeeIdClaim.Value, out int loggedInEmployeeId) || loggedInEmployeeId != employeeId)
+            {
+                return Json(new { error = "Unauthorized access to employee data." });
+            }
+
+            var enrollments = await _context.Enrollments
+                                            .Where(e => e.EmployeeId == employeeId)
+                                            .Include(e => e.Policy)
+                                            .OrderByDescending(e => e.EnrollmentDate) // Order by recent enrollments
+                                            .ToListAsync();
+
+            var enrolledPoliciesForFrontend = enrollments.Select(e => new
+            {
+                enrollmentId = e.EnrollmentId,
+                policyId = e.PolicyId,
+                policyName = e.Policy?.PolicyName ?? "N/A",
+                policyType = e.Policy?.PolicyType ?? "N/A",
+                coverageAmount = e.Policy?.CoverageAmount.ToString("N0") ?? "N/A",
+                premiumAmount = e.Policy?.PremiumAmount.ToString("N0") ?? "N/A",
+                enrollmentDate = e.EnrollmentDate.ToString("yyyy-MM-dd"),
+                status = e.Status ?? "N/A"
+            }).ToList();
+
+            return Json(enrolledPoliciesForFrontend);
+        }
+
+        // API: Get Claims for a specific Employee
+        // URL: /api/employee/claims/{employeeId}
+        [HttpGet("/api/employee/claims/{employeeId}")]
+        [Authorize(Roles = "Employee")]
+        public async Task<JsonResult> GetEmployeeClaimsApi(int employeeId)
+        {
+            // IMPORTANT: Authorize check if the logged-in employeeId matches the requested employeeId
+            var loggedInEmployeeIdClaim = User.FindFirst("EmployeeId");
+            if (loggedInEmployeeIdClaim == null || !int.TryParse(loggedInEmployeeIdClaim.Value, out int loggedInEmployeeId) || loggedInEmployeeId != employeeId)
+            {
+                return Json(new { error = "Unauthorized access to claims data." });
+            }
+
+            // Fetch claims through enrollments to link to the specific employee
+            var claims = await _context.Claims
+                                    .Include(c => c.Enrollment)
+                                        .ThenInclude(e => e.Employee)
+                                    .Include(c => c.Enrollment)
+                                        .ThenInclude(e => e.Policy)
+                                    .Where(c => c.Enrollment.EmployeeId == employeeId)
+                                    .OrderByDescending(c => c.ClaimDate) // Order by recent claims
+                                    .ToListAsync();
+
+            var claimsForFrontend = claims.Select(c => new
+            {
+                id = c.ClaimId,
+                enrollmentId = c.EnrollmentId,
+                policyName = c.Enrollment?.Policy?.PolicyName ?? "N/A",
+                policyType = c.Enrollment?.Policy?.PolicyType ?? "N/A",
+                claimDate = c.ClaimDate.ToString("yyyy-MM-dd"),
+                requestedAmount = c.ClaimAmount,
+                approvedAmount = (c.ClaimStatus?.Equals("APPROVED", StringComparison.OrdinalIgnoreCase) == true ? c.ClaimAmount : 0), // Derived
+                status = c.ClaimStatus ?? "N/A"
+            }).ToList();
+
+            return Json(claimsForFrontend);
+        }
+
+        // API: Get Available Policies (for enrollment)
+        // URL: /api/employee/available-policies
+        [HttpGet("/api/employee/available-policies")]
+        [Authorize(Roles = "Employee")]
+        public async Task<JsonResult> GetAvailablePoliciesApi()
+        {
+            // All policies are considered "available" unless specific logic dictates otherwise
+            var policies = await _context.Policies.ToListAsync();
+
+            var availablePoliciesForFrontend = policies.Select(p => new
+            {
+                id = p.PolicyId,
+                name = p.PolicyName,
+                type = p.PolicyType,
+                coverageAmount = p.CoverageAmount.ToString("N0"),
+                premiumAmount = p.PremiumAmount.ToString("N0")
+            }).ToList();
+
+            return Json(availablePoliciesForFrontend);
+        }
+
+        // API: Submit New Enrollment
+        // URL: /api/employee/submit-enrollment
+        [HttpPost("/api/employee/submit-enrollment")]
+        [Authorize(Roles = "Employee")]
+        public async Task<IActionResult> SubmitEnrollmentApi([FromBody] EnrollmentSubmissionModel model)
+        {
+            // IMPORTANT: Authorize check if the logged-in employeeId matches the submitted employeeId
+            var loggedInEmployeeIdClaim = User.FindFirst("EmployeeId");
+            if (loggedInEmployeeIdClaim == null || !int.TryParse(loggedInEmployeeIdClaim.Value, out int loggedInEmployeeId) || loggedInEmployeeId != model.EmployeeId)
+            {
+                return Unauthorized(new { message = "Unauthorized to create enrollment for this employee ID." });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            // Check if employee is already actively enrolled in this policy
+            var existingEnrollment = await _context.Enrollments
+                                                .AnyAsync(e => e.EmployeeId == model.EmployeeId && e.PolicyId == model.PolicyId && e.Status.ToUpper() == "ACTIVE");
+            if (existingEnrollment)
+            {
+                return BadRequest(new { message = "Employee is already actively enrolled in this policy." });
+            }
+
+            var newEnrollment = new Health_Insurance.Models.Enrollment // Fully qualify Enrollment
+            {
+                EmployeeId = model.EmployeeId,
+                PolicyId = model.PolicyId,
+                EnrollmentDate = DateTime.UtcNow, // Set current date
+                Status = "PENDING" // Or "ACTIVE" if enrollments are automatic upon submission
+            };
+
+            _context.Enrollments.Add(newEnrollment);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Enrollment submitted successfully!", enrollmentId = newEnrollment.EnrollmentId });
+        }
+
+        // Model for Enrollment Submission (internal to this controller, no separate file needed)
+        // This is a simple DTO to receive data from the frontend form.
+        public class EnrollmentSubmissionModel
+        {
+            [Required]
+            public int EmployeeId { get; set; }
+            [Required]
+            public int PolicyId { get; set; }
+            // No EnrollmentDate needed from frontend, we set it to UtcNow
+            // No Status needed from frontend, we set it to "PENDING" or "ACTIVE"
+        }
+
+
+        // API: Submit New Claim
+        // URL: /api/employee/submit-claim
+        [HttpPost("/api/employee/submit-claim")]
+        [Authorize(Roles = "Employee")]
+        public async Task<IActionResult> SubmitClaimApi([FromBody] ClaimSubmissionModel model)
+        {
+            // IMPORTANT: Authorize check if the logged-in employeeId matches the owner of the enrollment
+            var loggedInEmployeeIdClaim = User.FindFirst("EmployeeId");
+            if (loggedInEmployeeIdClaim == null || !int.TryParse(loggedInEmployeeIdClaim.Value, out int loggedInEmployeeId))
+            {
+                return Unauthorized(new { message = "Unauthorized access." });
+            }
+
+            // Verify the enrollment belongs to the logged-in employee
+            var enrollment = await _context.Enrollments
+                                            .FirstOrDefaultAsync(e => e.EnrollmentId == model.EnrollmentId && e.EmployeeId == loggedInEmployeeId && e.Status.ToUpper() == "ACTIVE");
+            if (enrollment == null)
+            {
+                return BadRequest(new { message = "Invalid or inactive enrollment for this employee." });
+            }
+
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var newClaim = new Health_Insurance.Models.Claim // Fully qualify Claim
+            {
+                EnrollmentId = model.EnrollmentId,
+                ClaimAmount = model.ClaimAmount,
+                ClaimDate = DateTime.UtcNow, // Set current date
+                ClaimStatus = "SUBMITTED" // Initial status
+            };
+
+            _context.Claims.Add(newClaim);
+            await _context.SaveChangesAsync();
+
+            return Ok(new { message = "Claim submitted successfully!", claimId = newClaim.ClaimId });
+        }
+
+        // Model for Claim Submission (internal to this controller, no separate file needed)
+        public class ClaimSubmissionModel
+        {
+            [Required]
+            public int EnrollmentId { get; set; } // The ID of the policy enrollment the claim is against
+            [Required]
+            [Range(0.01, double.MaxValue, ErrorMessage = "Claim amount must be a positive number.")]
+            public decimal ClaimAmount { get; set; }
+            // No ClaimDate needed from frontend, we set it to UtcNow
+            // No ClaimStatus needed from frontend, we set it to "SUBMITTED"
+        }
+
+        // API: Get Policy Details for Premium Calculation/Display
+        // URL: /api/employee/policy-details/{policyId}
+        [HttpGet("/api/employee/policy-details/{policyId}")]
+        [Authorize(Roles = "Employee")]
+        public async Task<JsonResult> GetPolicyDetailsApi(int policyId)
+        {
+            var policy = await _context.Policies.FirstOrDefaultAsync(p => p.PolicyId == policyId);
+
+            if (policy == null)
+            {
+                return Json(new { error = "Policy not found." });
+            }
+
+            return Json(new
+            {
+                id = policy.PolicyId,
+                name = policy.PolicyName,
+                type = policy.PolicyType,
+                coverageAmount = policy.CoverageAmount.ToString("N0"),
+                premiumAmount = policy.PremiumAmount.ToString("N0")
+            });
+        }
+
     }
 }
 
