@@ -36,7 +36,7 @@ namespace Health_Insurance.Controllers
             {
                 if (User.IsInRole("Admin"))
                 {
-                    return RedirectToAction("EmployeeDashboard", "Account"); // Admin goes to Employee management
+                    return RedirectToAction("Dashboard", "Account"); // Admin goes to Employee management
                 }
                 else if (User.IsInRole("Employee"))
                 {
