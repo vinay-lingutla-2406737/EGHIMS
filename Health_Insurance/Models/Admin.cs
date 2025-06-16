@@ -3,7 +3,7 @@ using System.ComponentModel.DataAnnotations;
 
 namespace Health_Insurance.Models // Ensure this namespace is correct based on your project name
 {
-    // Represents an Admin user for login purposes
+    // Represents an Admin user for login purposes sssss
     public class Admin
     {
         [Key]
