@@ -9,32 +9,28 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css" integrity="sha512-SnH5WK+bZxgPHs44uWIX+LLJAJ9/2PkPKZ5QiAj6Ta86w+fsb2TkcmfRyVX3pBnMFcV7oQPJkl9QevSCWr3W6A==" crossorigin="anonymous" referrerpolicy="no-referrer" />
 
-
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
- 
 
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
     <link rel="stylesheet" href="~/css/Health_Insurance.styles.css" asp-append-version="true" />
 </head>
 <body>
     <header>
-        {
         <nav class="navbar navbar-expand-sm navbar-toggleable-sm custom-navbar-bg sticky-top">
-            <div class="container-fluid">
-                <a class="navbar-brand custom-nav-link p-0" asp-area="" asp-controller="Home" asp-action="Index">
-                    <img src="~/images/logo_primeProtect.png" alt="Health Insurance Logo" style="height: 100px; margin-right: 2px;object-fit: cover">
-                </a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
-                </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-
-                        @if (User.IsInRole("Admin"))
-                        {
+            @if (User.IsInRole("Admin"))
+            {
+                <div class="container-fluid">
+                    <a class="navbar-brand custom-nav-link p-0" asp-area="" asp-controller="Account" asp-action="Dashboard">
+                        <img src="~/images/logo_primeProtect.png" alt="Health Insurance Logo" style="height: 100px; margin-right: 2px;object-fit: cover">
+                    </a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                            aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                        <ul class="navbar-nav flex-grow-1">
                             <li class="nav-item">
                                 <a class="nav-link custom-nav-link" asp-area="" asp-controller="Account" asp-action="Dashboard"><i class="fas fa-home me-1"></i>Home</a>
                             </li>
@@ -59,11 +55,23 @@
                             <li class="nav-item">
                                 <a class="nav-link custom-nav-link" asp-area="" asp-controller="HR" asp-action="Index"><i class="fas fa-user-tie me-1"></i>HR</a>
                             </li>
-                        }
+                        </ul>
+                    </div>
+                </div>
+            }
 
-                        
-                        @if (User.IsInRole("HR"))
-                        {
+            @if (User.IsInRole("HR"))
+            {
+                <div class="container-fluid">
+                    <a class="navbar-brand custom-nav-link p-0" asp-area="" asp-controller="Account" asp-action="HrDashboard">
+                        <img src="~/images/logo_primeProtect.png" alt="Health Insurance Logo" style="height: 100px; margin-right: 2px;object-fit: cover">
+                    </a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                            aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                        <ul class="navbar-nav flex-grow-1">
                             <li class="nav-item">
                                 <a class="nav-link custom-nav-link" asp-area="" asp-controller="Account" asp-action="HrDashboard"><i class="fas fa-home me-1"></i>Home</a>
                             </li>
@@ -76,17 +84,31 @@
                             <li class="nav-item">
                                 <a class="nav-link custom-nav-link" asp-area="" asp-controller="Report" asp-action="Index"><i class="fas fa-chart-pie me-1"></i>Reports (HR)</a>
                             </li>
-                        }
+                        </ul>
+                    </div>
+                </div>
+            }
 
-                        
-                        @if (User.IsInRole("Employee"))
-                        {
+            @if (User.IsInRole("Employee"))
+            {
+                <div class="container-fluid">
+                    <a class="navbar-brand custom-nav-link p-0" asp-area="" asp-controller="Account" asp-action="EmpDashboard">
+                        <img src="~/images/logo_primeProtect.png" alt="Health Insurance Logo" style="height: 100px; margin-right: 2px;object-fit: cover">
+                    </a>
+                    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
+                            aria-expanded="false" aria-label="Toggle navigation">
+                        <span class="navbar-toggler-icon"></span>
+                    </button>
+                    <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                        @{
                             int? employeeId = null;
                             var employeeIdClaim = User.FindFirst("EmployeeId");
                             if (employeeIdClaim != null && int.TryParse(employeeIdClaim.Value, out int id))
                             {
                                 employeeId = id;
                             }
+                        }
+                        <ul class="navbar-nav flex-grow-1">
                             <li class="nav-item">
                                 <a class="nav-link custom-nav-link" asp-area="" asp-controller="Account" asp-action="EmpDashboard"><i class="fas fa-home me-1"></i>Home</a>
                             </li>
@@ -105,35 +127,37 @@
                             <li class="nav-item">
                                 <a class="nav-link custom-nav-link" asp-area="" asp-controller="PremiumCalculator" asp-action="Index"><i class="fas fa-calculator me-1"></i>Premium Calculator</a>
                             </li>
-                        }
-                    </ul>
-                    <ul class="navbar-nav">
-                        
-                        
-                        
-                        
-                        
-                        @if (User.Identity.IsAuthenticated)
-                        {
-                            <li class="nav-item">
-                                <span class="nav-link custom-nav-link"><i class="fas fa-user-circle me-1"></i>@User.Identity.Name</span>
-                            </li>
-                            <li class="nav-item">
-                               
-                                <form asp-controller="Account" asp-action="Logout" method="get">
-                                    <button type="submit" class="custom-nav-button btn btn-dark d-flex align-items-center">Logout <i class="fas fa-sign-out-alt ms-1"></i></button>
-                                </form>
-                            </li>
-                        }
-                        else
-                        {
-                            <li class="nav-item">
-                                <a class="btn btn-outline-dark custom-nav-button d-flex align-items-center" asp-area="" asp-controller="Account" asp-action="Login">Login <i class="fas fa-sign-in-alt ms-1"></i></a>
-                            </li>
-                        }
-                    </ul>
+                        </ul>
+                    </div>
                 </div>
-            </div>
+            }
+
+            <ul class="navbar-nav flex-grow-1 d-flex justify-content-between">
+                @if (User.Identity.IsAuthenticated)
+                {
+                    
+                    <li class="nav-item">
+                        <span class="nav-link custom-nav-link"><i class="fas fa-user-circle me-1"></i>@User.Identity.Name</span>
+                    </li>
+                    <li class="nav-item">
+                        <form asp-controller="Account" asp-action="Logout" method="get">
+                            <button type="submit" class="custom-nav-button btn btn-dark d-flex align-items-center">Logout <i class="fas fa-sign-out-alt ms-1"></i></button>
+                        </form>
+                    </li>
+                   
+                }
+                else
+                {
+                    
+                        <li class="nav-item">
+                            <a class="nav-link custom-nav-link" asp-area="" asp-controller="Home" asp-action="Index"><i class="fas fa-home me-1"></i>Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="btn btn-outline-dark custom-nav-button d-flex align-items-center" asp-area="" asp-controller="Account" asp-action="Login">Login <i class="fas fa-sign-in-alt ms-1"></i></a>
+                        </li>
+                    
+                }
+            </ul>
         </nav>
     </header>
     <div class="container-fluid">
@@ -217,9 +241,10 @@
                         <div class="social-icons mb-3">
                             <a href="#"><i class="fab fa-linkedin-in"></i></a>
                             <a href="#"><i class="fab fa-instagram"></i></a>
-                            <a href="#"><i class="fab fa-twitter"></i></a>
-                            <a href="#"><i class="fab fa-youtube"></i></a>
-                            <a href="#"><i class="fab fa-facebook-f"></i></a>
+                            <a href="#">
+                                <a href="#"><i class="fab fa-twitter"></i></a>
+                                <a href="#"><i class="fab fa-youtube"></i></a>
+                                <a href="#"><i class="fab fa-facebook-f"></i></a>
                         </div>
                         <div class="app-badges d-flex flex-column align-items-center">
                             <a href="#" class="btn btn-outline-dark d-flex align-items-center justify-content-center px-4 py-2" style="width: 180px;">
@@ -254,4 +279,4 @@
 
     @await RenderSectionAsync("Scripts", required: false)
 </body>
-</html>                    <
+</html>
